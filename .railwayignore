@@ -1,0 +1,11 @@
+.env
+node_modules/
+.edge-profile/
+.edge-check/
+.railway/
+data/guestbook.json
+*.log
+ui-check-*.png
+railway-*-login.ps1
+Thumbs.db
+.DS_Store

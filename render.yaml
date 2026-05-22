@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: personal-profile-ai
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: GUESTBOOK_ADMIN_PASSWORD
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PUBLIC_SITE_URL
+        sync: false

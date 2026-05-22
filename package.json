@@ -1,0 +1,15 @@
+{
+  "name": "personal-profile-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A public personal profile site with an AI-style Q&A assistant.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check server.js && node --check public/app.js && node scripts/validate-config.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
