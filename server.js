@@ -16,6 +16,7 @@ const GUESTBOOK_PATH = process.env.GUESTBOOK_PATH
   ? path.resolve(ROOT, process.env.GUESTBOOK_PATH)
   : path.join(ROOT, "data", "guestbook.json");
 const JSON_LIMIT_BYTES = 64 * 1024;
+const ASSET_VERSION = createAssetVersion();
 const RATE_LIMITS = new Map();
 let guestbookMemory = [];
 
@@ -398,7 +399,7 @@ function serveStatic(requestPath, res) {
       if (error.code === "ENOENT") {
         fs.readFile(path.join(PUBLIC_DIR, "index.html"), (indexError, indexContent) => {
           if (indexError) return sendText(res, 404, "Not found");
-          sendBuffer(res, 200, indexContent, MIME_TYPES[".html"], requestPath);
+          sendHtml(res, 200, indexContent, requestPath);
         });
         return;
       }
@@ -406,6 +407,9 @@ function serveStatic(requestPath, res) {
     }
 
     const type = MIME_TYPES[path.extname(target).toLowerCase()] || "application/octet-stream";
+    if (type.includes("text/html")) {
+      return sendHtml(res, 200, content, requestPath);
+    }
     sendBuffer(res, 200, content, type, requestPath);
   });
 }
@@ -510,6 +514,19 @@ function sendText(res, status, text, type = "text/plain; charset=utf-8") {
   sendBuffer(res, status, Buffer.from(text), type);
 }
 
+function sendHtml(res, status, content, requestPath = "") {
+  const rawHtml = Buffer.isBuffer(content) ? content.toString("utf8") : String(content);
+  const html = injectAssetVersion(rawHtml);
+  sendBuffer(res, status, Buffer.from(html, "utf8"), MIME_TYPES[".html"], requestPath);
+}
+
+function injectAssetVersion(html) {
+  return html.replace(
+    /\b(href|src)="(\/(?:styles\.css|app\.js))(?:\?v=[^"]*)?"/g,
+    (match, attr, assetPath) => `${attr}="${assetPath}?v=${ASSET_VERSION}"`
+  );
+}
+
 function sendBuffer(res, status, content, type, requestPath = "") {
   const shouldNotCache = type.includes("text/html")
     || type.includes("json")
@@ -527,6 +544,35 @@ function sendBuffer(res, status, content, type, requestPath = "") {
     ...getSecurityHeaders()
   });
   res.end(content);
+}
+
+function createAssetVersion() {
+  const deployVersion = cleanVersion(
+    process.env.RENDER_GIT_COMMIT
+      || process.env.COMMIT_SHA
+      || process.env.SOURCE_VERSION
+      || ""
+  );
+
+  if (deployVersion) {
+    return deployVersion.slice(0, 12);
+  }
+
+  const assetFiles = ["index.html", "styles.css", "app.js"];
+  const latestMtime = assetFiles.reduce((latest, fileName) => {
+    try {
+      const filePath = path.join(PUBLIC_DIR, fileName);
+      return Math.max(latest, fs.statSync(filePath).mtimeMs);
+    } catch (error) {
+      return latest;
+    }
+  }, 0);
+
+  return String(Math.round(latestMtime || Date.now()));
+}
+
+function cleanVersion(value) {
+  return String(value || "").trim().replace(/[^a-zA-Z0-9._-]/g, "");
 }
 
 function getSecurityHeaders() {
