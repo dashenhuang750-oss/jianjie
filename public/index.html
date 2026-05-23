@@ -9,9 +9,27 @@
     <meta property="og:title" content="黄文浩 - AI 个人简介" />
     <meta property="og:description" content="一个可以互动、提问和浏览模块的个人简介网站。" />
     <title>个人简介 - AI 问答</title>
-    <link rel="stylesheet" href="/styles.css?v=22" />
+    <style>
+      body.is-booting .app-shell {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      body.is-booting .signature-canvas {
+        opacity: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="/styles.css?v=23" />
   </head>
-  <body>
+  <body class="is-booting">
+    <noscript>
+      <style>
+        body.is-booting .app-shell {
+          opacity: 1;
+          visibility: visible;
+        }
+      </style>
+    </noscript>
     <canvas id="signatureCanvas" class="signature-canvas" aria-hidden="true"></canvas>
 
     <main class="app-shell">
@@ -129,6 +147,48 @@
       </section>
     </main>
 
-    <script src="/app.js?v=22" defer></script>
+    <script>
+      (() => {
+        const placeholderName = "你的名字";
+        const reveal = () => {
+          requestAnimationFrame(() => {
+            document.body.classList.remove("is-booting");
+          });
+        };
+        const isReady = () => {
+          const name = document.querySelector("#profile-name");
+          const modules = document.querySelector("#moduleGrid");
+          return Boolean(
+            name
+            && name.textContent.trim()
+            && name.textContent.trim() !== placeholderName
+            && modules
+            && modules.children.length > 0
+          );
+        };
+        const observer = new MutationObserver(() => {
+          if (!isReady()) return;
+          observer.disconnect();
+          reveal();
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true,
+          characterData: true
+        });
+
+        if (isReady()) {
+          observer.disconnect();
+          reveal();
+        }
+
+        window.setTimeout(() => {
+          observer.disconnect();
+          reveal();
+        }, 3500);
+      })();
+    </script>
+    <script src="/app.js?v=23" defer></script>
   </body>
 </html>

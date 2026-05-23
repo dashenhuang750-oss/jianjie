@@ -89,6 +89,18 @@ svg {
   z-index: 1;
   min-height: 100vh;
   padding: 18px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 220ms ease;
+}
+
+body.is-booting .app-shell {
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.is-booting .signature-canvas {
+  opacity: 0;
 }
 
 .site-header {

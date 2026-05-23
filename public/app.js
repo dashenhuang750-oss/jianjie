@@ -61,16 +61,26 @@ async function init() {
   bindChatEvents();
 
   try {
-    const response = await fetch("/api/profile");
+    const response = await fetch("/api/profile", { cache: "no-store" });
     state.profile = await response.json();
   } catch (error) {
     state.profile = createFallbackProfile();
   }
 
-  state.modules = normalizeModules(state.profile);
-  renderProfile(state.profile);
-  renderModules();
-  setupStageMap();
+  try {
+    state.modules = normalizeModules(state.profile);
+    renderProfile(state.profile);
+    renderModules();
+    setupStageMap();
+  } finally {
+    revealApp();
+  }
+}
+
+function revealApp() {
+  requestAnimationFrame(() => {
+    elements.body.classList.remove("is-booting");
+  });
 }
 
 function setupTheme() {
