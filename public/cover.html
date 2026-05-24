@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#050510" />
+    <meta name="description" content="黄文浩的个人网站 - 探索数字世界中的另一个我" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="黄文浩 - Personal Website" />
+    <meta property="og:description" content="一个可以互动、提问和浏览模块的个人简介网站。" />
+    <title>黄文浩 - Personal Website</title>
+    <style>
+      :root {
+        --bg: #050510;
+        --cyan: #6ee7f9;
+        --violet: #a78bfa;
+        --pink: #f472b6;
+        --ink: #f8fafc;
+        --muted: #94a3b8;
+        --font: "Inter", "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        height: 100%;
+        background: var(--bg);
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font);
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse at 30% 20%, rgba(110, 231, 249, 0.06) 0%, transparent 50%),
+          radial-gradient(ellipse at 70% 60%, rgba(167, 139, 250, 0.05) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 80%, rgba(244, 114, 182, 0.04) 0%, transparent 50%),
+          var(--bg);
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+
+      body.is-exiting {
+        pointer-events: none;
+      }
+
+      body.is-exiting .cover-shell {
+        animation: coverExit 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+
+      #particleCanvas {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .cover-shell {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(320px, 0.9fr) minmax(380px, 1.1fr);
+        gap: clamp(32px, 6vw, 80px);
+        width: 100%;
+        max-width: 1280px;
+        padding: clamp(24px, 4vw, 60px);
+        align-items: center;
+        animation: coverEnter 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      /* Visual (left side) */
+      .cover-visual {
+        position: relative;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 0.85;
+        max-height: min(75vh, 680px);
+      }
+
+      .portrait-frame {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 24px;
+        overflow: hidden;
+        background:
+          linear-gradient(135deg, rgba(110, 231, 249, 0.12), rgba(167, 139, 250, 0.08)),
+          rgba(15, 15, 30, 0.6);
+        border: 1px solid rgba(110, 231, 249, 0.25);
+        box-shadow:
+          0 0 60px rgba(110, 231, 249, 0.1),
+          0 0 120px rgba(167, 139, 250, 0.06),
+          0 30px 80px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        transition: box-shadow 0.6s ease;
+      }
+
+      .portrait-frame:hover {
+        box-shadow:
+          0 0 80px rgba(110, 231, 249, 0.18),
+          0 0 160px rgba(167, 139, 250, 0.1),
+          0 30px 80px rgba(0, 0, 0, 0.5);
+      }
+
+      .portrait-frame::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        border-radius: 24px;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(110, 231, 249, 0.5), rgba(167, 139, 250, 0.2), rgba(244, 114, 182, 0.3));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .portrait-frame::after {
+        content: "";
+        position: absolute;
+        inset: 8%;
+        border: 1px solid rgba(110, 231, 249, 0.08);
+        border-radius: 16px;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .portrait-img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.92;
+        mix-blend-mode: normal;
+        transition: transform 0.6s ease, opacity 0.6s ease;
+      }
+
+      .portrait-frame:hover .portrait-img {
+        transform: scale(1.03);
+        opacity: 1;
+      }
+
+      .portrait-placeholder {
+        display: none;
+        width: 100%;
+        height: 100%;
+      }
+
+      .portrait-img[src=""],
+      .portrait-img:not([src]) {
+        display: none;
+      }
+
+      .portrait-img[src=""] ~ .portrait-placeholder,
+      .portrait-img:not([src]) ~ .portrait-placeholder {
+        display: grid;
+        place-items: center;
+      }
+
+      /* Placeholder geometric art */
+      .geo-art {
+        position: relative;
+        width: 62%;
+        aspect-ratio: 0.78;
+      }
+
+      .geo-ring {
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(110, 231, 249, 0.2);
+        border-radius: 50%;
+        animation: geoSpin 20s linear infinite;
+      }
+
+      .geo-ring:nth-child(2) {
+        inset: 12%;
+        border-color: rgba(167, 139, 250, 0.25);
+        animation-direction: reverse;
+        animation-duration: 16s;
+      }
+
+      .geo-ring:nth-child(3) {
+        inset: 22%;
+        border-color: rgba(244, 114, 182, 0.18);
+        animation-duration: 13s;
+        border-style: dashed;
+      }
+
+      .geo-dot {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 20px var(--cyan), 0 0 40px rgba(110, 231, 249, 0.5);
+        animation: geoPulse 3s ease-in-out infinite;
+        transform: translate(-50%, -50%);
+      }
+
+      .geo-line {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 45%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(110, 231, 249, 0.3), transparent);
+        transform-origin: left center;
+        animation: geoLine 8s ease-in-out infinite;
+      }
+
+      .geo-line:nth-child(5) { animation-delay: -2s; width: 38%; }
+      .geo-line:nth-child(6) { animation-delay: -4s; width: 50%; }
+      .geo-line:nth-child(7) { animation-delay: -6s; width: 32%; }
+
+      /* Content (right side) */
+      .cover-content {
+        display: grid;
+        align-content: center;
+        gap: clamp(16px, 2vw, 24px);
+        padding: clamp(16px, 3vw, 32px) 0;
+      }
+
+      .cover-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--cyan);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .cover-tag::before {
+        content: "";
+        width: 28px;
+        height: 1px;
+        background: var(--cyan);
+        opacity: 0.6;
+      }
+
+      .cover-title {
+        font-size: clamp(48px, 7vw, 88px);
+        font-weight: 820;
+        line-height: 0.96;
+        letter-spacing: -0.01em;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 40%, #a78bfa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .cover-subtitle {
+        color: var(--muted);
+        font-size: clamp(16px, 1.8vw, 22px);
+        line-height: 1.5;
+        max-width: 480px;
+      }
+
+      .cover-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        margin-top: 12px;
+      }
+
+      .enter-button {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 52px;
+        padding: 0 32px;
+        border: 1px solid rgba(110, 231, 249, 0.5);
+        border-radius: 12px;
+        color: #050510;
+        background: linear-gradient(135deg, #6ee7f9, #a78bfa);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition:
+          transform 0.25s ease,
+          box-shadow 0.25s ease;
+        box-shadow:
+          0 0 40px rgba(110, 231, 249, 0.25),
+          0 8px 24px rgba(0, 0, 0, 0.4);
+        animation: btnGlow 3s ease-in-out infinite;
+      }
+
+      .enter-button:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 0 60px rgba(110, 231, 249, 0.4),
+          0 0 100px rgba(167, 139, 250, 0.25),
+          0 12px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      .enter-button:active {
+        transform: translateY(0);
+      }
+
+      .enter-button svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: transform 0.25s ease;
+      }
+
+      .enter-button:hover svg {
+        transform: translateX(3px);
+      }
+
+      .enter-hint {
+        color: var(--muted);
+        font-size: 13px;
+        opacity: 0.7;
+      }
+
+      /* Bottom dots */
+      .cover-dots {
+        position: fixed;
+        bottom: clamp(20px, 4vh, 40px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .cover-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(248, 250, 252, 0.25);
+        transition: all 0.4s ease;
+      }
+
+      .cover-dot.is-active {
+        width: 28px;
+        border-radius: 4px;
+        background: var(--cyan);
+        box-shadow: 0 0 16px rgba(110, 231, 249, 0.5);
+      }
+
+      /* Floating accent lines */
+      .accent-lines {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.04;
+      }
+
+      .accent-lines::before,
+      .accent-lines::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(110, 231, 249, 0.5) 60px),
+          repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(110, 231, 249, 0.3) 60px);
+      }
+
+      @keyframes coverEnter {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes coverExit {
+        from {
+          opacity: 1;
+          transform: scale(1);
+          filter: blur(0);
+        }
+        to {
+          opacity: 0;
+          transform: scale(1.04);
+          filter: blur(12px);
+        }
+      }
+
+      @keyframes btnGlow {
+        0%, 100% {
+          box-shadow:
+            0 0 40px rgba(110, 231, 249, 0.25),
+            0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        50% {
+          box-shadow:
+            0 0 60px rgba(110, 231, 249, 0.4),
+            0 0 90px rgba(167, 139, 250, 0.2),
+            0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+      }
+
+      @keyframes geoSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+
+      @keyframes geoPulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        50% { transform: translate(-50%, -50%) scale(1.8); opacity: 0.5; }
+      }
+
+      @keyframes geoLine {
+        0% { transform: translate(-50%, -50%) rotate(0deg); opacity: 0.3; }
+        50% { transform: translate(-50%, -50%) rotate(180deg); opacity: 0.7; }
+        100% { transform: translate(-50%, -50%) rotate(360deg); opacity: 0.3; }
+      }
+
+      /* Responsive */
+      @media (max-width: 860px) {
+        .cover-shell {
+          grid-template-columns: 1fr;
+          gap: 0;
+          max-width: 520px;
+          padding: clamp(20px, 5vw, 40px);
+          text-align: center;
+        }
+
+        .cover-visual {
+          max-height: min(50vh, 420px);
+          aspect-ratio: 1;
+          order: -1;
+        }
+
+        .cover-content {
+          gap: 14px;
+          padding: 0;
+        }
+
+        .cover-title {
+          font-size: clamp(40px, 12vw, 64px);
+        }
+
+        .cover-subtitle {
+          margin: 0 auto;
+        }
+
+        .cover-actions {
+          justify-content: center;
+        }
+
+        .cover-tag {
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .cover-visual {
+          max-height: min(42vh, 340px);
+        }
+
+        .cover-title {
+          font-size: clamp(36px, 14vw, 52px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="particleCanvas" aria-hidden="true"></canvas>
+    <div class="accent-lines" aria-hidden="true"></div>
+
+    <div class="cover-shell">
+      <div class="cover-visual">
+        <div class="portrait-frame">
+          <!-- 替换 src 为你的肖像/形象图 -->
+          <img
+            class="portrait-img"
+            src=""
+            alt=""
+          />
+          <div class="portrait-placeholder">
+            <div class="geo-art">
+              <div class="geo-ring"></div>
+              <div class="geo-ring"></div>
+              <div class="geo-ring"></div>
+              <div class="geo-dot"></div>
+              <div class="geo-line"></div>
+              <div class="geo-line"></div>
+              <div class="geo-line"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover-content">
+        <span class="cover-tag">Personal Website</span>
+        <h1 class="cover-title">黄文浩</h1>
+        <p class="cover-subtitle">
+          探索数字世界中的另一个我。<br />
+          一个可以互动、提问和浏览模块的个人简介空间。
+        </p>
+        <div class="cover-actions">
+          <button id="enterButton" class="enter-button" type="button">
+            进入
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h13M13 6l6 6-6 6" />
+            </svg>
+          </button>
+          <span class="enter-hint">或按 Enter 键</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-dots" aria-hidden="true">
+      <span class="cover-dot is-active"></span>
+      <span class="cover-dot"></span>
+      <span class="cover-dot"></span>
+    </div>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById("particleCanvas");
+        const ctx = canvas.getContext("2d");
+        let width = 0;
+        let height = 0;
+        let particles = [];
+        let frame = 0;
+
+        const resize = () => {
+          const ratio = Math.min(window.devicePixelRatio || 1, 1.8);
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.floor(width * ratio);
+          canvas.height = Math.floor(height * ratio);
+          ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+          const count = Math.min(140, Math.max(60, Math.floor((width * height) / 12000)));
+          particles = Array.from({ length: count }, (_, i) => createParticle(i, width, height));
+        };
+
+        const createParticle = (i, w, h) => {
+          const angle = (i * 137.5 * Math.PI) / 180;
+          const ring = 0.15 + ((i * 41) % 100) / 140;
+          const x = w * (0.5 + Math.cos(angle) * ring * 0.44 + (Math.random() - 0.5) * 0.06);
+          const y = h * (0.5 + Math.sin(angle) * ring * 0.38 + (Math.random() - 0.5) * 0.06);
+          return {
+            x, y,
+            homeX: x, homeY: y,
+            vx: 0, vy: 0,
+            size: 0.6 + (i % 4) * 0.22,
+            alpha: 0.1 + (i % 7) * 0.02,
+            tone: i % 3,
+            seed: angle + i * 0.37,
+            floatAmp: 0.06 + (i % 5) * 0.015,
+            floatSpeed: 0.005 + (i % 6) * 0.0008,
+            weight: 0.12 + (i % 7) / 20
+          };
+        };
+
+        const draw = (ts) => {
+          frame += 1;
+          ctx.clearRect(0, 0, width, height);
+
+          for (const p of particles) {
+            const mx = width * 0.5;
+            const my = height * 0.5;
+
+            p.vx += (p.homeX - p.x) * 0.00008;
+            p.vy += (p.homeY - p.y) * 0.00008;
+            p.vx *= 0.945;
+            p.vy *= 0.945;
+            p.x += p.vx + Math.cos(frame * p.floatSpeed + p.seed) * p.floatAmp;
+            p.y += p.vy + Math.sin(frame * p.floatSpeed * 0.82 + p.seed) * p.floatAmp;
+
+            if (p.x < -40) p.x = width + 40;
+            if (p.x > width + 40) p.x = -40;
+            if (p.y < -40) p.y = height + 40;
+            if (p.y > height + 40) p.y = -40;
+          }
+
+          // Draw connections
+          const cellSize = 120;
+          const cells = new Map();
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            const key = `${Math.floor(p.x / cellSize)}:${Math.floor(p.y / cellSize)}`;
+            const cell = cells.get(key);
+            if (cell) cell.push(i);
+            else cells.set(key, [i]);
+          }
+
+          for (let i = 0; i < particles.length; i++) {
+            const a = particles[i];
+            const cx = Math.floor(a.x / cellSize);
+            const cy = Math.floor(a.y / cellSize);
+            for (let dx = -1; dx <= 1; dx++) {
+              for (let dy = -1; dy <= 1; dy++) {
+                const cell = cells.get(`${cx + dx}:${cy + dy}`);
+                if (!cell) continue;
+                for (const j of cell) {
+                  if (j <= i) continue;
+                  const b = particles[j];
+                  const dist = Math.hypot(a.x - b.x, a.y - b.y);
+                  if (dist < cellSize) {
+                    const alpha = (1 - dist / cellSize) * 0.12;
+                    ctx.strokeStyle = `rgba(110, 231, 249, ${alpha})`;
+                    ctx.lineWidth = 0.6;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                  }
+                }
+              }
+            }
+          }
+
+          // Draw particles
+          for (const p of particles) {
+            const pulse = Math.sin(frame * 0.015 + p.seed) * 0.5 + 0.5;
+            const alpha = p.alpha + pulse * 0.05;
+            const color = p.tone === 0
+              ? [110, 231, 249]
+              : p.tone === 1
+                ? [167, 139, 250]
+                : [244, 114, 182];
+
+            ctx.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size + pulse * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          requestAnimationFrame(draw);
+        };
+
+        // Enter transition
+        const enter = () => {
+          document.body.classList.add("is-exiting");
+          setTimeout(() => {
+            window.location.href = "/app";
+          }, 550);
+        };
+
+        document.getElementById("enterButton").addEventListener("click", enter);
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !document.body.classList.contains("is-exiting")) {
+            e.preventDefault();
+            enter();
+          }
+        });
+
+        // Animate dots
+        const dots = document.querySelectorAll(".cover-dot");
+        let dotIndex = 0;
+        setInterval(() => {
+          dots.forEach((d) => d.classList.remove("is-active"));
+          dotIndex = (dotIndex + 1) % dots.length;
+          dots[dotIndex].classList.add("is-active");
+        }, 2800);
+
+        resize();
+        requestAnimationFrame(draw);
+        window.addEventListener("resize", resize, { passive: true });
+      })();
+    </script>
+  </body>
+</html>
