@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"e:/personal-profile-ai\" add public/cover.html profile.config.json)",
+      "Bash(git -C e:/personal-profile-ai commit -m ' *)",
+      "Bash(git -C \"e:/personal-profile-ai\" push origin main)",
+      "Bash(git -C \"e:/personal-profile-ai\" log --oneline origin/main..HEAD)",
+      "Bash(git -C \"e:/personal-profile-ai\" diff --stat origin/main..HEAD)",
+      "Bash(git -C \"e:/personal-profile-ai\" log --oneline -5)",
+      "Bash(git -C \"e:/personal-profile-ai\" log --oneline origin/main -5)"
+    ]
+  }
+}
