@@ -386,7 +386,16 @@ function createId() {
 
 function serveStatic(requestPath, res) {
   const cleanPath = decodeURIComponent(requestPath.split("?")[0]);
-  const relativePath = cleanPath === "/" ? "index.html" : cleanPath.replace(/^\/+/, "");
+
+  let relativePath;
+  if (cleanPath === "/") {
+    relativePath = "cover.html";
+  } else if (cleanPath === "/app" || cleanPath === "/app/" || cleanPath.startsWith("/app/")) {
+    relativePath = "index.html";
+  } else {
+    relativePath = cleanPath.replace(/^\/+/, "");
+  }
+
   const target = path.normalize(path.join(PUBLIC_DIR, relativePath));
   const relativeToPublic = path.relative(PUBLIC_DIR, target);
 
