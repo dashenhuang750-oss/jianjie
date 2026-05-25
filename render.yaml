@@ -15,3 +15,7 @@ services:
         sync: false
       - key: PUBLIC_SITE_URL
         sync: false
+      - key: REDIS_URL
+        value: "https://saving-kangaroo-103530.upstash.io"
+      - key: REDIS_TOKEN
+        value: "gQAAAAAAAZRqAAIgcDFlMzdjYzE0NzU3ZGM0N2VkOGUxOTkxNmNhYTI0ZDM5ZQ"
