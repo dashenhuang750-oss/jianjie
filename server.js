@@ -8,6 +8,7 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const PROFILE_PATH = path.join(ROOT, "profile.config.json");
 
 loadEnvFile(path.join(ROOT, ".env"));
+loadYamlEnv(path.join(ROOT, "render.yaml"));
 
 const PORT = Number(process.env.PORT || 8787);
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
@@ -649,6 +650,33 @@ function loadEnvFile(filePath) {
     const value = trimmed.slice(equals + 1).trim().replace(/^["']|["']$/g, "");
     if (key && !process.env[key]) {
       process.env[key] = value;
+    }
+  }
+}
+
+function loadYamlEnv(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/);
+  let inEnvVars = false;
+  let currentKey = null;
+
+  for (const line of lines) {
+    if (/^\s*envVars:/.test(line)) {
+      inEnvVars = true;
+      continue;
+    }
+    if (!inEnvVars) continue;
+    if (/^\S/.test(line)) { inEnvVars = false; currentKey = null; continue; }
+
+    const keyMatch = line.match(/^\s+-\s+key:\s*(.+)/);
+    if (keyMatch) { currentKey = keyMatch[1].trim(); continue; }
+
+    if (currentKey) {
+      const valueMatch = line.match(/^\s+value:\s*["']?(.+?)["']?\s*$/);
+      if (valueMatch && valueMatch[1] && !process.env[currentKey]) {
+        process.env[currentKey] = valueMatch[1];
+      }
+      currentKey = null;
     }
   }
 }
