@@ -1,0 +1,744 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#050510" />
+    <meta name="description" content="黄文浩的个人网站 - 探索数字世界中的另一个我" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="黄文浩 - Personal Website" />
+    <meta property="og:description" content="一个可以互动、提问和浏览模块的个人简介网站。" />
+    <title>黄文浩 - Personal Website</title>
+    <style>
+      :root {
+        --bg: #050510;
+        --cyan: #6ee7f9;
+        --violet: #a78bfa;
+        --pink: #f472b6;
+        --ink: #f8fafc;
+        --muted: #94a3b8;
+        --font: "Inter", "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        height: 100%;
+        background: var(--bg);
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font);
+        color: var(--ink);
+        background:
+          radial-gradient(ellipse at 30% 20%, rgba(110, 231, 249, 0.06) 0%, transparent 50%),
+          radial-gradient(ellipse at 70% 60%, rgba(167, 139, 250, 0.05) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 80%, rgba(244, 114, 182, 0.04) 0%, transparent 50%),
+          var(--bg);
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+
+      body.is-exiting {
+        pointer-events: none;
+      }
+
+      body.is-exiting .cover-shell {
+        animation: coverExit 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+
+      #particleCanvas {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .cover-shell {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 1fr;
+        width: 100%;
+        max-width: 640px;
+        margin: 0 auto;
+        padding: clamp(24px, 4vw, 60px);
+        align-items: center;
+        text-align: center;
+        animation: coverEnter 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      /* Content (centered) */
+      .cover-content {
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: clamp(16px, 2vw, 24px);
+        padding: clamp(16px, 3vw, 32px) 0;
+      }
+
+      .cover-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--cyan);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        justify-content: center;
+      }
+
+      .cover-tag::before {
+        content: "";
+        width: 28px;
+        height: 1px;
+        background: var(--cyan);
+        opacity: 0.6;
+      }
+
+      .cover-title {
+        font-size: clamp(28px, 3.5vw, 42px);
+        font-weight: 600;
+        line-height: 1.15;
+        letter-spacing: 0.04em;
+        color: rgba(248, 250, 252, 0.85);
+      }
+
+      .cover-subtitle {
+        color: var(--muted);
+        font-size: clamp(16px, 1.8vw, 22px);
+        line-height: 1.5;
+      }
+
+      .cover-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-top: 12px;
+      }
+
+      .enter-button {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 52px;
+        padding: 0 32px;
+        border: 1px solid rgba(110, 231, 249, 0.5);
+        border-radius: 12px;
+        color: #050510;
+        background: linear-gradient(135deg, #6ee7f9, #a78bfa);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition:
+          transform 0.25s ease,
+          box-shadow 0.25s ease;
+        box-shadow:
+          0 0 40px rgba(110, 231, 249, 0.25),
+          0 8px 24px rgba(0, 0, 0, 0.4);
+        animation: btnGlow 3s ease-in-out infinite;
+      }
+
+      .enter-button:hover {
+        transform: translateY(-2px);
+        box-shadow:
+          0 0 60px rgba(110, 231, 249, 0.4),
+          0 0 100px rgba(167, 139, 250, 0.25),
+          0 12px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      .enter-button:active {
+        transform: translateY(0);
+      }
+
+      .enter-button svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        transition: transform 0.25s ease;
+      }
+
+      .enter-button:hover svg {
+        transform: translateX(3px);
+      }
+
+      .enter-hint {
+        color: var(--muted);
+        font-size: 13px;
+        opacity: 0.7;
+      }
+
+      /* Bottom dots */
+      .cover-dots {
+        position: fixed;
+        bottom: clamp(20px, 4vh, 40px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .cover-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(248, 250, 252, 0.25);
+        transition: all 0.4s ease;
+      }
+
+      .cover-dot.is-active {
+        width: 28px;
+        border-radius: 4px;
+        background: var(--cyan);
+        box-shadow: 0 0 16px rgba(110, 231, 249, 0.5);
+      }
+
+      /* Floating accent lines */
+      .accent-lines {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.04;
+      }
+
+      .accent-lines::before,
+      .accent-lines::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(110, 231, 249, 0.5) 60px),
+          repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(110, 231, 249, 0.3) 60px);
+      }
+
+      @keyframes coverEnter {
+        from {
+          opacity: 0;
+          transform: translateY(16px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes coverExit {
+        from {
+          opacity: 1;
+          transform: scale(1);
+          filter: blur(0);
+        }
+        to {
+          opacity: 0;
+          transform: scale(1.04);
+          filter: blur(12px);
+        }
+      }
+
+      @keyframes btnGlow {
+        0%, 100% {
+          box-shadow:
+            0 0 40px rgba(110, 231, 249, 0.25),
+            0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+        50% {
+          box-shadow:
+            0 0 60px rgba(110, 231, 249, 0.4),
+            0 0 90px rgba(167, 139, 250, 0.2),
+            0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+      }
+
+
+      /* Contact section */
+      .cover-contact {
+        margin-top: 6px;
+      }
+
+      .contact-divider {
+        width: 100%;
+        height: 1px;
+        margin-bottom: 16px;
+        background: linear-gradient(90deg, transparent, rgba(110, 231, 249, 0.25), rgba(167, 139, 250, 0.15), transparent);
+      }
+
+      .contact-links {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .contact-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 38px;
+        padding: 0 14px;
+        border: 1px solid rgba(110, 231, 249, 0.15);
+        border-radius: 10px;
+        color: var(--muted);
+        background: rgba(110, 231, 249, 0.04);
+        font-size: 13px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: var(--font);
+      }
+
+      .contact-link:hover {
+        color: var(--cyan);
+        border-color: rgba(110, 231, 249, 0.4);
+        background: rgba(110, 231, 249, 0.1);
+        box-shadow: 0 0 20px rgba(110, 231, 249, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .contact-link svg {
+        flex-shrink: 0;
+      }
+
+      /* WeChat QR popup */
+      .wechat-wrapper {
+        position: relative;
+      }
+
+      .wechat-qr-popup {
+        position: absolute;
+        bottom: calc(100% + 14px);
+        left: 50%;
+        transform: translateX(-50%) translateY(6px);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        z-index: 10;
+      }
+
+      .wechat-wrapper:hover .wechat-qr-popup,
+      .wechat-trigger:focus + .wechat-qr-popup,
+      .wechat-qr-popup:has(+ .wechat-trigger:focus) {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+      }
+
+      .qr-card {
+        padding: 14px;
+        border: 1px solid rgba(110, 231, 249, 0.3);
+        border-radius: 16px;
+        background: rgba(10, 10, 30, 0.95);
+        backdrop-filter: blur(20px);
+        box-shadow:
+          0 0 40px rgba(110, 231, 249, 0.15),
+          0 20px 60px rgba(0, 0, 0, 0.6);
+        text-align: center;
+      }
+
+      .qr-img {
+        display: block;
+        width: 160px;
+        height: 160px;
+        border-radius: 10px;
+        object-fit: contain;
+        background: #fff;
+      }
+
+      .qr-placeholder {
+        width: 160px;
+        height: 160px;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        border: 1px dashed rgba(110, 231, 249, 0.3);
+        background: rgba(110, 231, 249, 0.04);
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+        line-height: 1.6;
+        padding: 16px;
+      }
+
+      .qr-label {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      /* WeChat QR mobile tap behavior */
+      @media (hover: none) and (pointer: coarse) {
+        .wechat-qr-popup.show {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+          pointer-events: auto;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 860px) {
+        .cover-shell {
+          max-width: 520px;
+          padding: clamp(20px, 5vw, 40px);
+        }
+
+        .cover-content {
+          gap: 14px;
+          padding: 0;
+        }
+
+        .cover-title {
+          font-size: clamp(24px, 8vw, 36px);
+        }
+
+        .wechat-qr-popup {
+          bottom: auto;
+          top: calc(100% + 14px);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .cover-title {
+          font-size: clamp(22px, 10vw, 30px);
+        }
+
+        .qr-img,
+        .qr-placeholder {
+          width: 140px;
+          height: 140px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="particleCanvas" aria-hidden="true"></canvas>
+    <div class="accent-lines" aria-hidden="true"></div>
+
+    <div class="cover-shell">
+
+      <div class="cover-content">
+        <span class="cover-tag">Personal Website</span>
+        <h1 class="cover-title">黄文浩</h1>
+        <p class="cover-subtitle">
+          探索数字世界中的另一个我。<br />
+          一个可以互动、提问和浏览模块的个人简介空间。
+        </p>
+        <div class="cover-actions">
+          <button id="enterButton" class="enter-button" type="button">
+            进入
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 12h13M13 6l6 6-6 6" />
+            </svg>
+          </button>
+          <span class="enter-hint">或按 Enter 键</span>
+        </div>
+
+        <div class="cover-contact">
+          <div class="contact-divider"></div>
+          <div class="contact-links">
+            <a href="mailto:3435738857@nwafu.edu.cn" class="contact-link" title="邮箱">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="m22 4-10 8L2 4"/>
+              </svg>
+              <span>邮箱</span>
+            </a>
+            <a href="tel:+86你的电话号码" class="contact-link" title="电话">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              <span>电话</span>
+            </a>
+            <div class="wechat-wrapper">
+              <button class="contact-link wechat-trigger" type="button" title="微信" aria-label="显示微信二维码">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 10.9c2.7 0 4.9-2 4.9-4.4C12.9 4 10.7 2 8 2S3.1 4 3.1 6.5c0 1.1.4 2.1 1.2 2.9L3.6 11l2-.7c.8.4 1.6.6 2.4.6Z"/>
+                  <path d="M15.6 14.3c2.9 0 5.3-2.1 5.3-4.6 0-2.6-2.4-4.7-5.3-4.7"/>
+                  <path d="M19.5 14.5a4.2 4.2 0 0 1 1.4 3c0 1.2-.5 2.2-1.3 2.9l.7 2.1-2.1-.7c-.8.4-1.7.6-2.6.6-1.7 0-3.2-.7-4.2-1.8"/>
+                  <circle cx="6.1" cy="6.5" r=".6" fill="currentColor" stroke="none"/>
+                  <circle cx="9.9" cy="6.5" r=".6" fill="currentColor" stroke="none"/>
+                </svg>
+                <span>微信</span>
+              </button>
+              <div class="wechat-qr-popup">
+                <div class="qr-card">
+                  <img
+                    class="qr-img"
+                    src="/media/wechat-qr.png"
+                    alt="微信二维码"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='grid';"
+                  />
+                  <div class="qr-placeholder" style="display:none;">
+                    <span>请将微信二维码图片<br/>保存为 public/media/wechat-qr.png</span>
+                  </div>
+                  <p class="qr-label">扫码添加微信</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cover-dots" aria-hidden="true">
+      <span class="cover-dot is-active"></span>
+      <span class="cover-dot"></span>
+      <span class="cover-dot"></span>
+    </div>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById("particleCanvas");
+        const ctx = canvas.getContext("2d");
+        let width = 0;
+        let height = 0;
+        let particles = [];
+        let frame = 0;
+        let mouseX = -9999;
+        let mouseY = -9999;
+        let targetMouseX = -9999;
+        let targetMouseY = -9999;
+
+        const resize = () => {
+          const ratio = Math.min(window.devicePixelRatio || 1, 1.8);
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.floor(width * ratio);
+          canvas.height = Math.floor(height * ratio);
+          ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+          const count = Math.min(280, Math.max(140, Math.floor((width * height) / 5000)));
+          particles = Array.from({ length: count }, (_, i) => createParticle(i, width, height));
+        };
+
+        const createParticle = (i, w, h) => {
+          const angle = Math.random() * Math.PI * 2;
+          const radius = Math.random() * 0.44;
+          const x = w * (0.5 + Math.cos(angle) * radius);
+          const y = h * (0.5 + Math.sin(angle) * radius * 0.72);
+          const tones = [
+            { r: 110, g: 231, b: 249 },  // cyan
+            { r: 167, g: 139, b: 250 },  // violet
+            { r: 244, g: 114, b: 182 },  // pink
+            { r: 212, g: 175, b: 55 },   // gold
+            { r: 52,  g: 211, b: 153 },  // emerald
+            { r: 251, g: 146, b: 60 },   // orange
+            { r: 96,  g: 165, b: 250 },  // blue
+            { r: 232, g: 121, b: 249 },  // magenta
+          ];
+          const tone = tones[i % tones.length];
+          return {
+            x, y,
+            homeX: x, homeY: y,
+            vx: 0, vy: 0,
+            size: 0.8 + Math.random() * 3.5,
+            alpha: 0.1 + Math.random() * 0.18,
+            tone,
+            seed: Math.random() * Math.PI * 2,
+            floatAmp: 0.04 + Math.random() * 0.1,
+            floatSpeed: 0.003 + Math.random() * 0.012,
+            weight: 0.06 + Math.random() * 0.18
+          };
+        };
+
+        document.addEventListener("mousemove", (e) => {
+          targetMouseX = e.clientX;
+          targetMouseY = e.clientY;
+        }, { passive: true });
+
+        document.addEventListener("mouseleave", () => {
+          targetMouseX = -9999;
+          targetMouseY = -9999;
+        });
+
+        // Touch support
+        document.addEventListener("touchmove", (e) => {
+          if (e.touches.length > 0) {
+            targetMouseX = e.touches[0].clientX;
+            targetMouseY = e.touches[0].clientY;
+          }
+        }, { passive: true });
+
+        document.addEventListener("touchend", () => {
+          targetMouseX = -9999;
+          targetMouseY = -9999;
+        });
+
+        const draw = (ts) => {
+          frame += 1;
+          ctx.clearRect(0, 0, width, height);
+
+          // Smooth mouse follow
+          mouseX += (targetMouseX - mouseX) * 0.06;
+          mouseY += (targetMouseY - mouseY) * 0.06;
+
+          const hasMouse = mouseX > -5000 && mouseY > -5000;
+
+          for (const p of particles) {
+            // Home attraction
+            p.vx += (p.homeX - p.x) * 0.00012;
+            p.vy += (p.homeY - p.y) * 0.00012;
+
+            // Mouse interaction - stronger push
+            if (hasMouse) {
+              const dx = p.x - mouseX;
+              const dy = p.y - mouseY;
+              const dist = Math.hypot(dx, dy);
+              const mouseRadius = 240;
+              if (dist < mouseRadius) {
+                const force = (1 - dist / mouseRadius) * 0.025;
+                p.vx += (dx / (dist + 0.1)) * force;
+                p.vy += (dy / (dist + 0.1)) * force;
+              }
+            }
+
+            // Damping
+            p.vx *= 0.935;
+            p.vy *= 0.935;
+
+            // Float motion
+            p.x += p.vx + Math.cos(frame * p.floatSpeed + p.seed) * p.floatAmp;
+            p.y += p.vy + Math.sin(frame * p.floatSpeed * 0.78 + p.seed) * p.floatAmp;
+
+            // Wrap around
+            if (p.x < -80) p.x = width + 80;
+            if (p.x > width + 80) p.x = -80;
+            if (p.y < -80) p.y = height + 80;
+            if (p.y > height + 80) p.y = -80;
+          }
+
+          // Draw connections
+          const cellSize = 160;
+          const cells = new Map();
+          for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            const key = `${Math.floor(p.x / cellSize)}:${Math.floor(p.y / cellSize)}`;
+            const cell = cells.get(key);
+            if (cell) cell.push(i);
+            else cells.set(key, [i]);
+          }
+
+          for (let i = 0; i < particles.length; i++) {
+            const a = particles[i];
+            const cx = Math.floor(a.x / cellSize);
+            const cy = Math.floor(a.y / cellSize);
+            for (let dx = -1; dx <= 1; dx++) {
+              for (let dy = -1; dy <= 1; dy++) {
+                const cell = cells.get(`${cx + dx}:${cy + dy}`);
+                if (!cell) continue;
+                for (const j of cell) {
+                  if (j <= i) continue;
+                  const b = particles[j];
+                  const dist = Math.hypot(a.x - b.x, a.y - b.y);
+                  if (dist < cellSize) {
+                    const alpha = (1 - dist / cellSize) * 0.2;
+                    const midR = (a.tone.r + b.tone.r) / 2;
+                    const midG = (a.tone.g + b.tone.g) / 2;
+                    const midB = (a.tone.b + b.tone.b) / 2;
+                    ctx.strokeStyle = `rgba(${midR}, ${midG}, ${midB}, ${alpha})`;
+                    ctx.lineWidth = 0.7;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.stroke();
+                  }
+                }
+              }
+            }
+          }
+
+          // Draw particles with glow
+          for (const p of particles) {
+            const pulse = Math.sin(frame * 0.02 + p.seed) * 0.5 + 0.5;
+            const alpha = p.alpha + pulse * 0.07;
+
+            // Outer glow - bigger
+            const glowSize = p.size * 6;
+            const glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
+            glowGrad.addColorStop(0, `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, ${alpha})`);
+            glowGrad.addColorStop(0.3, `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, ${alpha * 0.6})`);
+            glowGrad.addColorStop(1, `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, 0)`);
+            ctx.fillStyle = glowGrad;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Core
+            ctx.fillStyle = `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, ${Math.min(alpha * 1.6, 0.9)})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          requestAnimationFrame(draw);
+        };
+
+        // Enter transition
+        const enter = () => {
+          document.body.classList.add("is-exiting");
+          setTimeout(() => {
+            window.location.href = "/app";
+          }, 550);
+        };
+
+        document.getElementById("enterButton").addEventListener("click", enter);
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !document.body.classList.contains("is-exiting")) {
+            e.preventDefault();
+            enter();
+          }
+        });
+
+        // Animate dots
+        const dots = document.querySelectorAll(".cover-dot");
+        let dotIndex = 0;
+        setInterval(() => {
+          dots.forEach((d) => d.classList.remove("is-active"));
+          dotIndex = (dotIndex + 1) % dots.length;
+          dots[dotIndex].classList.add("is-active");
+        }, 2800);
+
+        // Mobile: tap to toggle WeChat QR
+        const wechatTrigger = document.querySelector(".wechat-trigger");
+        const wechatPopup = document.querySelector(".wechat-qr-popup");
+        if (wechatTrigger && wechatPopup) {
+          wechatTrigger.addEventListener("click", (e) => {
+            e.preventDefault();
+            wechatPopup.classList.toggle("show");
+          });
+          document.addEventListener("click", (e) => {
+            if (!wechatTrigger.contains(e.target) && !wechatPopup.contains(e.target)) {
+              wechatPopup.classList.remove("show");
+            }
+          });
+        }
+
+        resize();
+        requestAnimationFrame(draw);
+        window.addEventListener("resize", resize, { passive: true });
+      })();
+    </script>
+  </body>
+</html>
