@@ -30,6 +30,10 @@
         }
       </style>
     </noscript>
+    <div class="mountain-bg" aria-hidden="true">
+      <div class="mountain-layer"></div>
+      <canvas id="cloudCanvas" class="cloud-canvas"></canvas>
+    </div>
     <canvas id="signatureCanvas" class="signature-canvas" aria-hidden="true"></canvas>
 
     <main class="app-shell">
@@ -40,6 +44,7 @@
         </button>
 
         <div class="header-actions">
+          <a class="cover-return" href="/">封面</a>
           <span id="availability" class="status-pill">开放交流</span>
           <button id="themeToggle" class="icon-button" type="button" aria-label="切换明暗模式">
             <svg viewBox="0 0 24 24" aria-hidden="true">

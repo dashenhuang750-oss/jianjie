@@ -3,244 +3,417 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#050510" />
-    <meta name="description" content="黄文浩的个人网站 - 探索数字世界中的另一个我" />
+    <meta name="theme-color" content="#e8ecef" />
+    <meta name="description" content="黄文浩的个人网站 - 进入可互动的个人简介与 AI 分身。" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="黄文浩 - Personal Website" />
     <meta property="og:description" content="一个可以互动、提问和浏览模块的个人简介网站。" />
     <title>黄文浩 - Personal Website</title>
     <style>
       :root {
-        --bg: #050510;
-        --cyan: #6ee7f9;
-        --violet: #a78bfa;
-        --pink: #f472b6;
-        --ink: #f8fafc;
-        --muted: #94a3b8;
+        color-scheme: light;
+        --paper: #e8ecef;
+        --paper-deep: #cfd6da;
+        --ink: #101417;
+        --muted: rgba(16, 20, 23, 0.62);
+        --hairline: rgba(16, 20, 23, 0.34);
+        --soft-line: rgba(16, 20, 23, 0.16);
+        --white: rgba(255, 255, 255, 0.72);
         --font: "Inter", "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+        --serif: "Times New Roman", "Songti SC", SimSun, serif;
+        --mx: 0.5;
+        --my: 0.5;
+        --px: 0px;
+        --py: 0px;
       }
 
       * {
         box-sizing: border-box;
-        margin: 0;
-        padding: 0;
       }
 
       html {
-        height: 100%;
-        background: var(--bg);
+        min-height: 100%;
+        background: var(--paper);
       }
 
       body {
         min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--font);
+        margin: 0;
+        overflow: hidden;
         color: var(--ink);
         background:
-          radial-gradient(ellipse at 30% 20%, rgba(110, 231, 249, 0.06) 0%, transparent 50%),
-          radial-gradient(ellipse at 70% 60%, rgba(167, 139, 250, 0.05) 0%, transparent 50%),
-          radial-gradient(ellipse at 50% 80%, rgba(244, 114, 182, 0.04) 0%, transparent 50%),
-          var(--bg);
+          linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(203, 211, 216, 0.76)),
+          var(--paper);
+        font-family: var(--font);
+        text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
-        overflow: hidden;
       }
 
-      body.is-exiting {
-        pointer-events: none;
+      button,
+      a {
+        color: inherit;
+        font: inherit;
       }
 
-      body.is-exiting .cover-shell {
-        animation: coverExit 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      }
-
-      #particleCanvas {
-        position: fixed;
-        inset: 0;
-        z-index: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      }
-
-      .cover-shell {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: 1fr;
-        width: 100%;
-        max-width: 640px;
-        margin: 0 auto;
-        padding: clamp(24px, 4vw, 60px);
-        align-items: center;
-        text-align: center;
-        animation: coverEnter 1s cubic-bezier(0.2, 0.8, 0.2, 1);
-      }
-
-      /* Content (centered) */
-      .cover-content {
-        display: grid;
-        align-content: center;
-        justify-items: center;
-        gap: clamp(16px, 2vw, 24px);
-        padding: clamp(16px, 3vw, 32px) 0;
-      }
-
-      .cover-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--cyan);
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        justify-content: center;
-      }
-
-      .cover-tag::before {
-        content: "";
-        width: 28px;
-        height: 1px;
-        background: var(--cyan);
-        opacity: 0.6;
-      }
-
-      .cover-title {
-        font-size: clamp(28px, 3.5vw, 42px);
-        font-weight: 600;
-        line-height: 1.15;
-        letter-spacing: 0.04em;
-        color: rgba(248, 250, 252, 0.85);
-      }
-
-      .cover-subtitle {
-        color: var(--muted);
-        font-size: clamp(16px, 1.8vw, 22px);
-        line-height: 1.5;
-      }
-
-      .cover-actions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: 16px;
-        margin-top: 12px;
-      }
-
-      .enter-button {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        min-height: 52px;
-        padding: 0 32px;
-        border: 1px solid rgba(110, 231, 249, 0.5);
-        border-radius: 12px;
-        color: #050510;
-        background: linear-gradient(135deg, #6ee7f9, #a78bfa);
-        font-size: 17px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
+      button {
         cursor: pointer;
-        transition:
-          transform 0.25s ease,
-          box-shadow 0.25s ease;
+      }
+
+      svg {
+        display: block;
+      }
+
+      .cover-frame {
+        position: fixed;
+        inset: 28px;
+        overflow: hidden;
+        border: 1px solid var(--hairline);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(246, 248, 248, 0.9), rgba(223, 229, 232, 0.9));
+        isolation: isolate;
+        animation: frameIn 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      .cover-frame::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        pointer-events: none;
+        background:
+          linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent 52%),
+          repeating-linear-gradient(0deg, rgba(16, 20, 23, 0.018) 0 1px, transparent 1px 4px);
+        mix-blend-mode: soft-light;
+      }
+
+      .cover-frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        pointer-events: none;
         box-shadow:
-          0 0 40px rgba(110, 231, 249, 0.25),
-          0 8px 24px rgba(0, 0, 0, 0.4);
-        animation: btnGlow 3s ease-in-out infinite;
+          0 0 0 1px rgba(255, 255, 255, 0.32) inset,
+          0 30px 90px rgba(13, 24, 32, 0.18) inset;
       }
 
-      .enter-button:hover {
-        transform: translateY(-2px);
-        box-shadow:
-          0 0 60px rgba(110, 231, 249, 0.4),
-          0 0 100px rgba(167, 139, 250, 0.25),
-          0 12px 32px rgba(0, 0, 0, 0.5);
+      .site-nav {
+        position: relative;
+        z-index: 12;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center;
+        min-height: 66px;
+        padding: 0 clamp(18px, 3vw, 42px);
+        font-size: 14px;
       }
 
-      .enter-button:active {
-        transform: translateY(0);
+      .wordmark,
+      .nav-menu,
+      .enter-link {
+        display: inline-flex;
+        align-items: center;
       }
 
-      .enter-button svg {
-        width: 20px;
-        height: 20px;
+      .wordmark {
+        gap: 8px;
+        width: fit-content;
+        border: 0;
+        background: transparent;
+        text-decoration: none;
+      }
+
+      .wordmark-mark {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--hairline);
+        border-radius: 50%;
+        font-family: var(--serif);
+        font-size: 18px;
+        font-style: italic;
+      }
+
+      .wordmark span:last-child {
+        font-family: var(--serif);
+        font-size: 18px;
+      }
+
+      .nav-menu {
+        gap: clamp(18px, 4vw, 64px);
+        justify-content: center;
+      }
+
+      .nav-menu a,
+      .enter-link {
+        position: relative;
+        min-height: 36px;
+        border: 0;
+        background: transparent;
+        text-decoration: none;
+      }
+
+      .nav-menu a::after,
+      .enter-link::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 6px;
+        height: 1px;
+        background: currentColor;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 220ms ease;
+      }
+
+      .nav-menu a:hover::after,
+      .enter-link:hover::after {
+        transform: scaleX(1);
+      }
+
+      .nav-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .enter-link {
+        gap: 9px;
+        padding: 0;
+      }
+
+      .enter-link svg {
+        width: 18px;
+        height: 18px;
         fill: none;
         stroke: currentColor;
-        stroke-width: 2.2;
+        stroke-width: 1.7;
         stroke-linecap: round;
         stroke-linejoin: round;
-        transition: transform 0.25s ease;
       }
 
-      .enter-button:hover svg {
-        transform: translateX(3px);
-      }
-
-      .enter-hint {
-        color: var(--muted);
-        font-size: 13px;
-        opacity: 0.7;
-      }
-
-      /* Bottom dots */
-      .cover-dots {
-        position: fixed;
-        bottom: clamp(20px, 4vh, 40px);
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .cover-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: rgba(248, 250, 252, 0.25);
-        transition: all 0.4s ease;
-      }
-
-      .cover-dot.is-active {
-        width: 28px;
-        border-radius: 4px;
-        background: var(--cyan);
-        box-shadow: 0 0 16px rgba(110, 231, 249, 0.5);
-      }
-
-      /* Floating accent lines */
-      .accent-lines {
-        position: fixed;
+      .hero-stage {
+        position: absolute;
         inset: 0;
-        pointer-events: none;
-        z-index: 0;
-        opacity: 0.04;
+        z-index: 1;
       }
 
-      .accent-lines::before,
-      .accent-lines::after {
+      .mountain-layer {
+        position: absolute;
+        inset: -4% -3% -8%;
+        background-image: url("/media/mountain-hero.webp");
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center 34%;
+        transform:
+          translate3d(
+            calc((0.5 - var(--mx)) * 28px),
+            calc((0.5 - var(--my)) * 18px),
+            0
+          )
+          scale(1.045);
+        transition: transform 140ms ease-out;
+        will-change: transform;
+      }
+
+      .mountain-layer::before {
         content: "";
         position: absolute;
         inset: 0;
         background:
-          repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(110, 231, 249, 0.5) 60px),
-          repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(110, 231, 249, 0.3) 60px);
+          linear-gradient(180deg, rgba(232, 236, 239, 0.36) 0%, rgba(232, 236, 239, 0.18) 31%, rgba(232, 236, 239, 0) 58%),
+          linear-gradient(90deg, rgba(232, 236, 239, 0.2), transparent 20%, transparent 78%, rgba(232, 236, 239, 0.22));
       }
 
-      @keyframes coverEnter {
+      .mountain-layer::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 42%;
+        background: linear-gradient(0deg, rgba(6, 9, 11, 0.42), rgba(6, 9, 11, 0));
+      }
+
+      .cloud-canvas {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        opacity: 0.58;
+        mix-blend-mode: multiply;
+      }
+
+      .altitude-line {
+        position: absolute;
+        z-index: 8;
+        left: 50%;
+        top: 45%;
+        width: 1px;
+        height: clamp(76px, 13vh, 132px);
+        background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.92), transparent);
+        transform:
+          translate(-50%, -50%)
+          translate3d(calc((var(--mx) - 0.5) * -20px), calc((var(--my) - 0.5) * -12px), 0);
+        opacity: 0.78;
+      }
+
+      .altitude-line::before,
+      .altitude-line::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        width: 9px;
+        height: 9px;
+        border-left: 1px solid rgba(255, 255, 255, 0.86);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.86);
+      }
+
+      .altitude-line::before {
+        top: -2px;
+        transform: translateX(-50%) rotate(135deg);
+      }
+
+      .altitude-line::after {
+        bottom: -2px;
+        transform: translateX(-50%) rotate(-45deg);
+      }
+
+      .hero-copy {
+        position: relative;
+        z-index: 10;
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+        width: min(920px, calc(100vw - 64px));
+        margin: clamp(84px, 13vh, 140px) auto 0;
+        text-align: center;
+        transform:
+          translate3d(calc((var(--mx) - 0.5) * 14px), calc((var(--my) - 0.5) * 10px), 0);
+        transition: transform 160ms ease-out;
+      }
+
+      .hero-kicker {
+        margin: 0;
+        color: var(--muted);
+        font-size: clamp(12px, 1.3vw, 15px);
+      }
+
+      .hero-title {
+        margin: 0;
+        font-family: var(--serif);
+        font-size: clamp(68px, 12vw, 156px);
+        font-style: italic;
+        font-weight: 400;
+        line-height: 0.88;
+        letter-spacing: 0;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.52);
+      }
+
+      .hero-line {
+        max-width: 620px;
+        margin: 2px 0 0;
+        color: rgba(247, 250, 251, 0.86);
+        font-size: clamp(15px, 1.6vw, 20px);
+        line-height: 1.7;
+        text-shadow: 0 2px 24px rgba(0, 0, 0, 0.54);
+      }
+
+      .enter-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 48px;
+        margin-top: 8px;
+        padding: 0 18px;
+        border: 1px solid rgba(16, 20, 23, 0.42);
+        border-radius: 999px;
+        color: #f7fafb;
+        background: rgba(13, 18, 22, 0.86);
+        box-shadow: 0 16px 40px rgba(9, 15, 18, 0.22);
+        transition:
+          transform 220ms ease,
+          background 220ms ease,
+          box-shadow 220ms ease;
+      }
+
+      .enter-button:hover {
+        transform: translateY(-2px);
+        background: #050708;
+        box-shadow: 0 22px 54px rgba(9, 15, 18, 0.28);
+      }
+
+      .enter-button svg {
+        width: 19px;
+        height: 19px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .edge-caption {
+        position: absolute;
+        z-index: 10;
+        right: clamp(18px, 3vw, 44px);
+        bottom: clamp(16px, 3vh, 34px);
+        display: grid;
+        justify-items: end;
+        gap: 4px;
+        color: rgba(255, 255, 255, 0.72);
+        font-family: var(--serif);
+        font-size: clamp(13px, 1.2vw, 16px);
+        font-style: italic;
+        text-shadow: 0 1px 18px rgba(0, 0, 0, 0.46);
+      }
+
+      .edge-caption small {
+        color: rgba(255, 255, 255, 0.58);
+        font-family: var(--font);
+        font-size: 11px;
+        font-style: normal;
+      }
+
+      .side-index {
+        position: absolute;
+        z-index: 10;
+        left: clamp(16px, 2.5vw, 34px);
+        bottom: clamp(16px, 3vh, 34px);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        text-transform: uppercase;
+        text-shadow: 0 1px 18px rgba(0, 0, 0, 0.48);
+      }
+
+      .side-index::before {
+        content: "";
+        width: 46px;
+        height: 1px;
+        background: currentColor;
+      }
+
+      body.is-exiting .cover-frame {
+        animation: coverExit 620ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      }
+
+      @keyframes frameIn {
         from {
           opacity: 0;
-          transform: translateY(16px);
+          transform: translateY(16px) scale(0.985);
+          filter: blur(10px);
         }
         to {
           opacity: 1;
-          transform: translateY(0);
+          transform: translateY(0) scale(1);
+          filter: blur(0);
         }
       }
 
@@ -252,496 +425,266 @@
         }
         to {
           opacity: 0;
-          transform: scale(1.04);
+          transform: scale(1.035);
           filter: blur(12px);
         }
       }
 
-      @keyframes btnGlow {
-        0%, 100% {
-          box-shadow:
-            0 0 40px rgba(110, 231, 249, 0.25),
-            0 8px 24px rgba(0, 0, 0, 0.4);
-        }
-        50% {
-          box-shadow:
-            0 0 60px rgba(110, 231, 249, 0.4),
-            0 0 90px rgba(167, 139, 250, 0.2),
-            0 8px 24px rgba(0, 0, 0, 0.4);
-        }
-      }
-
-
-      /* Contact section */
-      .cover-contact {
-        margin-top: 6px;
-      }
-
-      .contact-divider {
-        width: 100%;
-        height: 1px;
-        margin-bottom: 16px;
-        background: linear-gradient(90deg, transparent, rgba(110, 231, 249, 0.25), rgba(167, 139, 250, 0.15), transparent);
-      }
-
-      .contact-links {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-      }
-
-      .contact-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        min-height: 38px;
-        padding: 0 14px;
-        border: 1px solid rgba(110, 231, 249, 0.15);
-        border-radius: 10px;
-        color: var(--muted);
-        background: rgba(110, 231, 249, 0.04);
-        font-size: 13px;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        font-family: var(--font);
-      }
-
-      a.contact-link,
-      button.contact-link {
-        cursor: pointer;
-      }
-
-      a.contact-link:hover,
-      button.contact-link:hover {
-        color: var(--cyan);
-        border-color: rgba(110, 231, 249, 0.4);
-        background: rgba(110, 231, 249, 0.1);
-        box-shadow: 0 0 20px rgba(110, 231, 249, 0.1);
-        transform: translateY(-1px);
-      }
-
-      .contact-link svg {
-        flex-shrink: 0;
-      }
-
-      /* WeChat QR popup */
-      .wechat-wrapper {
-        position: relative;
-      }
-
-      .wechat-qr-popup {
-        position: absolute;
-        bottom: calc(100% + 14px);
-        left: 50%;
-        transform: translateX(-50%) translateY(6px);
-        opacity: 0;
-        pointer-events: none;
-        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        z-index: 10;
-      }
-
-      .wechat-wrapper:hover .wechat-qr-popup,
-      .wechat-trigger:focus + .wechat-qr-popup,
-      .wechat-qr-popup:has(+ .wechat-trigger:focus) {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-        pointer-events: auto;
-      }
-
-      .qr-card {
-        padding: 14px;
-        border: 1px solid rgba(110, 231, 249, 0.3);
-        border-radius: 16px;
-        background: rgba(10, 10, 30, 0.95);
-        backdrop-filter: blur(20px);
-        box-shadow:
-          0 0 40px rgba(110, 231, 249, 0.15),
-          0 20px 60px rgba(0, 0, 0, 0.6);
-        text-align: center;
-      }
-
-      .qr-img {
-        display: block;
-        width: 160px;
-        height: 160px;
-        border-radius: 10px;
-        object-fit: contain;
-        background: #fff;
-      }
-
-      .qr-placeholder {
-        width: 160px;
-        height: 160px;
-        display: grid;
-        place-items: center;
-        border-radius: 10px;
-        border: 1px dashed rgba(110, 231, 249, 0.3);
-        background: rgba(110, 231, 249, 0.04);
-        color: var(--muted);
-        font-size: 12px;
-        text-align: center;
-        line-height: 1.6;
-        padding: 16px;
-      }
-
-      .qr-label {
-        margin: 10px 0 0;
-        color: var(--muted);
-        font-size: 12px;
-      }
-
-      /* WeChat QR mobile tap behavior */
-      @media (hover: none) and (pointer: coarse) {
-        .wechat-qr-popup.show {
-          opacity: 1;
-          transform: translateX(-50%) translateY(0);
-          pointer-events: auto;
-        }
-      }
-
-      /* Responsive */
-      @media (max-width: 860px) {
-        .cover-shell {
-          max-width: 520px;
-          padding: clamp(20px, 5vw, 40px);
+      @media (max-width: 820px) {
+        body {
+          overflow: auto;
+          background: var(--paper);
         }
 
-        .cover-content {
-          gap: 14px;
-          padding: 0;
+        .cover-frame {
+          position: relative;
+          inset: auto;
+          min-height: calc(100vh - 24px);
+          margin: 12px;
         }
 
-        .cover-title {
-          font-size: clamp(24px, 8vw, 36px);
+        .site-nav {
+          grid-template-columns: 1fr auto;
+          gap: 12px;
+          padding: 0 16px;
         }
 
-        .wechat-qr-popup {
-          bottom: auto;
-          top: calc(100% + 14px);
+        .nav-menu {
+          display: none;
+        }
+
+        .wordmark span:last-child {
+          max-width: 44vw;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .hero-copy {
+          width: calc(100vw - 54px);
+          margin-top: 96px;
+          justify-items: start;
+          text-align: left;
+        }
+
+        .hero-title {
+          font-size: clamp(74px, 22vw, 112px);
+        }
+
+        .hero-line {
+          max-width: 350px;
+          font-size: 15px;
+        }
+
+        .mountain-layer {
+          inset: -2% -36% -3% -22%;
+          background-position: 48% 68%;
+        }
+
+        .altitude-line {
+          left: 62%;
+          top: 48%;
+        }
+
+        .side-index {
+          display: none;
         }
       }
 
       @media (max-width: 480px) {
-        .cover-title {
-          font-size: clamp(22px, 10vw, 30px);
+        .cover-frame {
+          min-height: calc(100vh - 18px);
+          margin: 9px;
         }
 
-        .qr-img,
-        .qr-placeholder {
-          width: 140px;
-          height: 140px;
+        .enter-link span {
+          display: none;
+        }
+
+        .hero-copy {
+          margin-top: 84px;
+        }
+
+        .hero-title {
+          font-size: clamp(62px, 23vw, 92px);
+        }
+
+        .edge-caption {
+          left: 16px;
+          right: 16px;
+          justify-items: start;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+
+        .mountain-layer,
+        .hero-copy,
+        .altitude-line {
+          transform: none;
         }
       }
     </style>
   </head>
   <body>
-    <canvas id="particleCanvas" aria-hidden="true"></canvas>
-    <div class="accent-lines" aria-hidden="true"></div>
+    <main class="cover-frame" aria-label="黄文浩个人网站封面">
+      <div class="hero-stage" aria-hidden="true">
+        <div class="mountain-layer"></div>
+        <canvas id="cloudCanvas" class="cloud-canvas"></canvas>
+        <span class="altitude-line"></span>
+      </div>
 
-    <div class="cover-shell">
+      <header class="site-nav">
+        <a class="wordmark" href="/app" data-enter>
+          <span class="wordmark-mark">H</span>
+          <span>Huang Wenhao</span>
+        </a>
 
-      <div class="cover-content">
-        <span class="cover-tag">Personal Website</span>
-        <h1 class="cover-title">黄文浩</h1>
-        <p class="cover-subtitle">
-          探索数字世界中的另一个我。<br />
-          一个可以互动、提问和浏览模块的个人简介空间。
-        </p>
-        <div class="cover-actions">
-          <button id="enterButton" class="enter-button" type="button">
-            进入
+        <nav class="nav-menu" aria-label="主导航">
+          <a href="/app" data-enter>Profile</a>
+          <a href="/app" data-enter>Ask AI</a>
+          <a href="/app" data-enter>Guestbook</a>
+        </nav>
+
+        <div class="nav-actions">
+          <button class="enter-link" type="button" data-enter>
+            <span>Enter</span>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12h13M13 6l6 6-6 6" />
             </svg>
           </button>
-          <span class="enter-hint">或按 Enter 键</span>
         </div>
+      </header>
 
-        <div class="cover-contact">
-          <div class="contact-divider"></div>
-          <div class="contact-links">
-            <span class="contact-link">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="4" width="20" height="16" rx="2"/>
-                <path d="m22 4-10 8L2 4"/>
-              </svg>
-              <span>3435738857@nwafu.edu.cn</span>
-            </span>
-            <span class="contact-link">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-              </svg>
-              <span>15608744434</span>
-            </span>
-            <div class="wechat-wrapper">
-              <button class="contact-link wechat-trigger" type="button" title="微信" aria-label="显示微信二维码">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M8 10.9c2.7 0 4.9-2 4.9-4.4C12.9 4 10.7 2 8 2S3.1 4 3.1 6.5c0 1.1.4 2.1 1.2 2.9L3.6 11l2-.7c.8.4 1.6.6 2.4.6Z"/>
-                  <path d="M15.6 14.3c2.9 0 5.3-2.1 5.3-4.6 0-2.6-2.4-4.7-5.3-4.7"/>
-                  <path d="M19.5 14.5a4.2 4.2 0 0 1 1.4 3c0 1.2-.5 2.2-1.3 2.9l.7 2.1-2.1-.7c-.8.4-1.7.6-2.6.6-1.7 0-3.2-.7-4.2-1.8"/>
-                  <circle cx="6.1" cy="6.5" r=".6" fill="currentColor" stroke="none"/>
-                  <circle cx="9.9" cy="6.5" r=".6" fill="currentColor" stroke="none"/>
-                </svg>
-                <span>微信</span>
-              </button>
-              <div class="wechat-qr-popup">
-                <div class="qr-card">
-                  <img
-                    class="qr-img"
-                    src="/media/wechat-qr.png"
-                    alt="微信二维码"
-                    onerror="this.style.display='none';this.nextElementSibling.style.display='grid';"
-                  />
-                  <div class="qr-placeholder" style="display:none;">
-                    <span>请将微信二维码图片<br/>保存为 public/media/wechat-qr.png</span>
-                  </div>
-                  <p class="qr-label">扫码添加微信</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section class="hero-copy" aria-labelledby="coverTitle">
+        <p class="hero-kicker">Northwest A&F University · Personal Profile AI</p>
+        <h1 id="coverTitle" class="hero-title">黄文浩</h1>
+        <p class="hero-line">在雪线之上打开这个个人空间，继续看简介、项目、留言和 AI 分身。</p>
+        <button id="enterButton" class="enter-button" type="button">
+          进入主页
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h13M13 6l6 6-6 6" />
+          </svg>
+        </button>
+      </section>
+
+      <div class="side-index" aria-hidden="true">Altitude Interface</div>
+      <div class="edge-caption" aria-hidden="true">
+        <span>Above the ridge</span>
+        <small>Personal website / 2026</small>
       </div>
-    </div>
-
-    <div class="cover-dots" aria-hidden="true">
-      <span class="cover-dot is-active"></span>
-      <span class="cover-dot"></span>
-      <span class="cover-dot"></span>
-    </div>
+    </main>
 
     <script>
       (() => {
-        const canvas = document.getElementById("particleCanvas");
+        const root = document.documentElement;
+        const canvas = document.querySelector("#cloudCanvas");
         const ctx = canvas.getContext("2d");
+        const enterTargets = document.querySelectorAll("[data-enter], #enterButton");
+        const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         let width = 0;
         let height = 0;
-        let particles = [];
+        let points = [];
         let frame = 0;
-        let mouseX = -9999;
-        let mouseY = -9999;
-        let targetMouseX = -9999;
-        let targetMouseY = -9999;
+
+        const setPointer = (x, y) => {
+          const mx = Math.min(Math.max(x / Math.max(window.innerWidth, 1), 0), 1);
+          const my = Math.min(Math.max(y / Math.max(window.innerHeight, 1), 0), 1);
+          root.style.setProperty("--mx", mx.toFixed(3));
+          root.style.setProperty("--my", my.toFixed(3));
+          root.style.setProperty("--px", `${x.toFixed(1)}px`);
+          root.style.setProperty("--py", `${y.toFixed(1)}px`);
+        };
 
         const resize = () => {
-          const ratio = Math.min(window.devicePixelRatio || 1, 1.8);
-          width = window.innerWidth;
-          height = window.innerHeight;
+          const ratio = Math.min(window.devicePixelRatio || 1, 1.6);
+          const rect = canvas.getBoundingClientRect();
+          width = Math.max(1, rect.width);
+          height = Math.max(1, rect.height);
           canvas.width = Math.floor(width * ratio);
           canvas.height = Math.floor(height * ratio);
           ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-          const count = Math.min(280, Math.max(140, Math.floor((width * height) / 5000)));
-          particles = Array.from({ length: count }, (_, i) => createParticle(i, width, height));
+          const count = Math.min(150, Math.max(70, Math.floor((width * height) / 14000)));
+          points = Array.from({ length: count }, (_, index) => {
+            const row = index % 4;
+            return {
+              x: ((index * 37) % 100) / 100,
+              y: 0.08 + row * 0.11 + (((index * 17) % 100) / 100) * 0.06,
+              drift: 0.35 + (index % 9) * 0.05,
+              size: 0.8 + (index % 3) * 0.25,
+              alpha: 0.045 + (index % 5) * 0.012
+            };
+          });
         };
 
-        const createParticle = (i, w, h) => {
-          const angle = Math.random() * Math.PI * 2;
-          const radius = Math.random() * 0.44;
-          const x = w * (0.5 + Math.cos(angle) * radius);
-          const y = h * (0.5 + Math.sin(angle) * radius * 0.72);
-          const tones = [
-            { r: 110, g: 231, b: 249 },  // cyan
-            { r: 167, g: 139, b: 250 },  // violet
-            { r: 244, g: 114, b: 182 },  // pink
-            { r: 212, g: 175, b: 55 },   // gold
-            { r: 52,  g: 211, b: 153 },  // emerald
-            { r: 251, g: 146, b: 60 },   // orange
-            { r: 96,  g: 165, b: 250 },  // blue
-            { r: 232, g: 121, b: 249 },  // magenta
-          ];
-          const tone = tones[i % tones.length];
-          return {
-            x, y,
-            homeX: x, homeY: y,
-            vx: 0, vy: 0,
-            size: 0.8 + Math.random() * 3.5,
-            alpha: 0.1 + Math.random() * 0.18,
-            tone,
-            seed: Math.random() * Math.PI * 2,
-            floatAmp: 0.04 + Math.random() * 0.1,
-            floatSpeed: 0.003 + Math.random() * 0.012,
-            weight: 0.06 + Math.random() * 0.18
-          };
-        };
-
-        document.addEventListener("mousemove", (e) => {
-          targetMouseX = e.clientX;
-          targetMouseY = e.clientY;
-        }, { passive: true });
-
-        document.addEventListener("mouseleave", () => {
-          targetMouseX = -9999;
-          targetMouseY = -9999;
-        });
-
-        // Touch support
-        document.addEventListener("touchmove", (e) => {
-          if (e.touches.length > 0) {
-            targetMouseX = e.touches[0].clientX;
-            targetMouseY = e.touches[0].clientY;
-          }
-        }, { passive: true });
-
-        document.addEventListener("touchend", () => {
-          targetMouseX = -9999;
-          targetMouseY = -9999;
-        });
-
-        const draw = (ts) => {
+        const draw = () => {
           frame += 1;
           ctx.clearRect(0, 0, width, height);
 
-          // Smooth mouse follow
-          mouseX += (targetMouseX - mouseX) * 0.06;
-          mouseY += (targetMouseY - mouseY) * 0.06;
+          const time = frame * 0.006;
+          const mx = Number.parseFloat(getComputedStyle(root).getPropertyValue("--mx")) || 0.5;
+          const my = Number.parseFloat(getComputedStyle(root).getPropertyValue("--my")) || 0.5;
+          const pullX = (mx - 0.5) * 18;
+          const pullY = (my - 0.5) * 10;
 
-          const hasMouse = mouseX > -5000 && mouseY > -5000;
-
-          for (const p of particles) {
-            // Home attraction
-            p.vx += (p.homeX - p.x) * 0.00012;
-            p.vy += (p.homeY - p.y) * 0.00012;
-
-            // Mouse interaction - stronger push
-            if (hasMouse) {
-              const dx = p.x - mouseX;
-              const dy = p.y - mouseY;
-              const dist = Math.hypot(dx, dy);
-              const mouseRadius = 240;
-              if (dist < mouseRadius) {
-                const force = (1 - dist / mouseRadius) * 0.025;
-                p.vx += (dx / (dist + 0.1)) * force;
-                p.vy += (dy / (dist + 0.1)) * force;
-              }
-            }
-
-            // Damping
-            p.vx *= 0.935;
-            p.vy *= 0.935;
-
-            // Float motion
-            p.x += p.vx + Math.cos(frame * p.floatSpeed + p.seed) * p.floatAmp;
-            p.y += p.vy + Math.sin(frame * p.floatSpeed * 0.78 + p.seed) * p.floatAmp;
-
-            // Wrap around
-            if (p.x < -80) p.x = width + 80;
-            if (p.x > width + 80) p.x = -80;
-            if (p.y < -80) p.y = height + 80;
-            if (p.y > height + 80) p.y = -80;
-          }
-
-          // Draw connections
-          const cellSize = 160;
-          const cells = new Map();
-          for (let i = 0; i < particles.length; i++) {
-            const p = particles[i];
-            const key = `${Math.floor(p.x / cellSize)}:${Math.floor(p.y / cellSize)}`;
-            const cell = cells.get(key);
-            if (cell) cell.push(i);
-            else cells.set(key, [i]);
-          }
-
-          for (let i = 0; i < particles.length; i++) {
-            const a = particles[i];
-            const cx = Math.floor(a.x / cellSize);
-            const cy = Math.floor(a.y / cellSize);
-            for (let dx = -1; dx <= 1; dx++) {
-              for (let dy = -1; dy <= 1; dy++) {
-                const cell = cells.get(`${cx + dx}:${cy + dy}`);
-                if (!cell) continue;
-                for (const j of cell) {
-                  if (j <= i) continue;
-                  const b = particles[j];
-                  const dist = Math.hypot(a.x - b.x, a.y - b.y);
-                  if (dist < cellSize) {
-                    const alpha = (1 - dist / cellSize) * 0.2;
-                    const midR = (a.tone.r + b.tone.r) / 2;
-                    const midG = (a.tone.g + b.tone.g) / 2;
-                    const midB = (a.tone.b + b.tone.b) / 2;
-                    ctx.strokeStyle = `rgba(${midR}, ${midG}, ${midB}, ${alpha})`;
-                    ctx.lineWidth = 0.7;
-                    ctx.beginPath();
-                    ctx.moveTo(a.x, a.y);
-                    ctx.lineTo(b.x, b.y);
-                    ctx.stroke();
-                  }
-                }
-              }
-            }
-          }
-
-          // Draw particles with glow
-          for (const p of particles) {
-            const pulse = Math.sin(frame * 0.02 + p.seed) * 0.5 + 0.5;
-            const alpha = p.alpha + pulse * 0.07;
-
-            // Outer glow - bigger
-            const glowSize = p.size * 6;
-            const glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
-            glowGrad.addColorStop(0, `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, ${alpha})`);
-            glowGrad.addColorStop(0.3, `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, ${alpha * 0.6})`);
-            glowGrad.addColorStop(1, `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, 0)`);
-            ctx.fillStyle = glowGrad;
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = "rgba(35, 45, 52, 0.09)";
+          for (let i = 0; i < 5; i += 1) {
+            const y = height * (0.18 + i * 0.105) + Math.sin(time * 1.8 + i) * 7 + pullY * 0.45;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, glowSize, 0, Math.PI * 2);
-            ctx.fill();
+            for (let x = -40; x <= width + 40; x += 34) {
+              const wave = Math.sin(x * 0.012 + time * (1.4 + i * 0.12) + i) * (6 + i * 1.8);
+              if (x === -40) ctx.moveTo(x, y + wave);
+              else ctx.lineTo(x, y + wave);
+            }
+            ctx.stroke();
+          }
 
-            // Core
-            ctx.fillStyle = `rgba(${p.tone.r}, ${p.tone.g}, ${p.tone.b}, ${Math.min(alpha * 1.6, 0.9)})`;
+          for (const point of points) {
+            const x = ((point.x * width + Math.sin(time * point.drift + point.y * 9) * 18 + pullX) + width) % width;
+            const y = point.y * height + Math.cos(time * point.drift + point.x * 12) * 7 + pullY;
+            ctx.fillStyle = `rgba(35, 45, 52, ${point.alpha})`;
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.arc(x, y, point.size, 0, Math.PI * 2);
             ctx.fill();
           }
 
-          requestAnimationFrame(draw);
+          if (!reduceMotion) requestAnimationFrame(draw);
         };
 
-        // Enter transition
-        const enter = () => {
+        const enter = (event) => {
+          if (event) event.preventDefault();
+          if (document.body.classList.contains("is-exiting")) return;
           document.body.classList.add("is-exiting");
-          setTimeout(() => {
+          window.setTimeout(() => {
             window.location.href = "/app";
-          }, 550);
+          }, 520);
         };
 
-        document.getElementById("enterButton").addEventListener("click", enter);
+        document.addEventListener("pointermove", (event) => {
+          setPointer(event.clientX, event.clientY);
+        }, { passive: true });
 
-        document.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" && !document.body.classList.contains("is-exiting")) {
-            e.preventDefault();
-            enter();
-          }
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Enter") enter(event);
         });
 
-        // Animate dots
-        const dots = document.querySelectorAll(".cover-dot");
-        let dotIndex = 0;
-        setInterval(() => {
-          dots.forEach((d) => d.classList.remove("is-active"));
-          dotIndex = (dotIndex + 1) % dots.length;
-          dots[dotIndex].classList.add("is-active");
-        }, 2800);
-
-        // Mobile: tap to toggle WeChat QR
-        const wechatTrigger = document.querySelector(".wechat-trigger");
-        const wechatPopup = document.querySelector(".wechat-qr-popup");
-        if (wechatTrigger && wechatPopup) {
-          wechatTrigger.addEventListener("click", (e) => {
-            e.preventDefault();
-            wechatPopup.classList.toggle("show");
-          });
-          document.addEventListener("click", (e) => {
-            if (!wechatTrigger.contains(e.target) && !wechatPopup.contains(e.target)) {
-              wechatPopup.classList.remove("show");
-            }
-          });
-        }
+        enterTargets.forEach((target) => {
+          target.addEventListener("click", enter);
+        });
 
         resize();
-        requestAnimationFrame(draw);
+        setPointer(window.innerWidth / 2, window.innerHeight / 2);
+        draw();
         window.addEventListener("resize", resize, { passive: true });
       })();
     </script>

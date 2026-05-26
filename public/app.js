@@ -15,11 +15,12 @@ const state = {
   reduceMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches
 };
 
-const VISUAL_ACCENTS = ["#60a5fa", "#22d3ee", "#a78bfa", "#34d399", "#93c5fd", "#c4b5fd"];
+const VISUAL_ACCENTS = ["#172027", "#5f6b73", "#9aa4aa", "#3e4a52", "#b8c0c5", "#2d363d"];
 
 const elements = {
   body: document.body,
   canvas: document.querySelector("#signatureCanvas"),
+  cloudCanvas: document.querySelector("#cloudCanvas"),
   stageCanvas: document.querySelector("#stageCanvas"),
   stageNodes: document.querySelector("#stageNodes"),
   stageReadoutLabel: document.querySelector("#stageReadoutLabel"),
@@ -57,6 +58,7 @@ init();
 async function init() {
   setupTheme();
   setupCanvas();
+  setupCloudCanvas();
   bindGlobalEvents();
   bindChatEvents();
 
@@ -85,7 +87,7 @@ function revealApp() {
 
 function setupTheme() {
   const stored = localStorage.getItem("profile-theme");
-  elements.body.dataset.theme = stored || "dark";
+  elements.body.dataset.theme = stored || "light";
 }
 
 function bindGlobalEvents() {
@@ -1229,6 +1231,73 @@ function setupCanvas() {
   window.addEventListener("resize", resize, { passive: true });
 }
 
+function setupCloudCanvas() {
+  const canvas = elements.cloudCanvas;
+  if (!canvas) return;
+  const context = canvas.getContext("2d");
+  let width = 0;
+  let height = 0;
+  let points = [];
+  let frame = 0;
+
+  const resize = () => {
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.4);
+    width = Math.max(1, window.innerWidth);
+    height = Math.max(1, window.innerHeight);
+    canvas.width = Math.floor(width * ratio);
+    canvas.height = Math.floor(height * ratio);
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+
+    const count = Math.min(120, Math.max(55, Math.floor((width * height) / 18000)));
+    points = Array.from({ length: count }, (_, index) => {
+      const row = index % 4;
+      return {
+        x: ((index * 37) % 100) / 100,
+        y: 0.08 + row * 0.11 + (((index * 17) % 100) / 100) * 0.06,
+        drift: 0.35 + (index % 9) * 0.05,
+        size: 0.7 + (index % 3) * 0.22,
+        alpha: 0.03 + (index % 5) * 0.01
+      };
+    });
+  };
+
+  const draw = () => {
+    if (state.reduceMotion) return;
+    frame += 1;
+    context.clearRect(0, 0, width, height);
+
+    const time = frame * 0.006;
+
+    for (let i = 0; i < 5; i += 1) {
+      const y = height * (0.18 + i * 0.105) + Math.sin(time * 1.8 + i) * 7;
+      context.lineWidth = 1;
+      context.strokeStyle = "rgba(160, 172, 184, 0.07)";
+      context.beginPath();
+      for (let x = -40; x <= width + 40; x += 34) {
+        const wave = Math.sin(x * 0.012 + time * (1.4 + i * 0.12) + i) * (6 + i * 1.8);
+        if (x === -40) context.moveTo(x, y + wave);
+        else context.lineTo(x, y + wave);
+      }
+      context.stroke();
+    }
+
+    for (const point of points) {
+      const x = ((point.x * width + Math.sin(time * point.drift + point.y * 9) * 18) + width) % width;
+      const y = point.y * height + Math.cos(time * point.drift + point.x * 12) * 7;
+      context.fillStyle = `rgba(180, 192, 204, ${point.alpha})`;
+      context.beginPath();
+      context.arc(x, y, point.size, 0, Math.PI * 2);
+      context.fill();
+    }
+
+    requestAnimationFrame(draw);
+  };
+
+  resize();
+  draw();
+  window.addEventListener("resize", resize, { passive: true });
+}
+
 function createParticle(index, width, height) {
   const edge = index % 5 !== 0;
   const progress = ((index * 37) % 100) / 100;
@@ -1321,9 +1390,7 @@ function drawConnections(context, particles, width) {
       if (distance < limit) {
         const edgeBoost = a.edge || b.edge ? 1.12 : 0.72;
         const alpha = (1 - distance / limit) * 0.2 * edgeBoost;
-        context.strokeStyle = elements.body.dataset.theme === "dark"
-          ? `rgba(147, 197, 253, ${alpha})`
-          : `rgba(37, 99, 235, ${alpha})`;
+        context.strokeStyle = `rgba(48, 58, 64, ${alpha * 0.72})`;
         context.lineWidth = 1;
         context.beginPath();
         context.moveTo(a.x, a.y);
@@ -1342,10 +1409,10 @@ function drawParticles(context, particles, frame) {
     const alpha = particle.alpha + pulse * (particle.edge ? 0.18 : 0.09);
     const radius = particle.size + pulse * (particle.edge ? 0.55 : 0.32);
     const color = particle.tone === 0
-      ? [96, 165, 250]
+      ? [42, 52, 58]
       : particle.tone === 1
-        ? [34, 211, 238]
-        : [167, 139, 250];
+        ? [110, 122, 130]
+        : [185, 193, 198];
 
     if (particle.edge) {
       context.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.18})`;
