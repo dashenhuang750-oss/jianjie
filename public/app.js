@@ -113,11 +113,15 @@ function bindGlobalEvents() {
   });
 
   window.addEventListener("pointermove", (event) => {
-    state.pointer.x = event.clientX / Math.max(window.innerWidth, 1);
-    state.pointer.y = event.clientY / Math.max(window.innerHeight, 1);
+    const mx = event.clientX / Math.max(window.innerWidth, 1);
+    const my = event.clientY / Math.max(window.innerHeight, 1);
+    state.pointer.x = mx;
+    state.pointer.y = my;
     state.pointer.active = true;
-    elements.body.style.setProperty("--tilt-x", state.pointer.x.toFixed(3));
-    elements.body.style.setProperty("--tilt-y", state.pointer.y.toFixed(3));
+    elements.body.style.setProperty("--mx", mx.toFixed(3));
+    elements.body.style.setProperty("--my", my.toFixed(3));
+    elements.body.style.setProperty("--tilt-x", mx.toFixed(3));
+    elements.body.style.setProperty("--tilt-y", my.toFixed(3));
   }, { passive: true });
 
   window.addEventListener("pointerleave", () => {
