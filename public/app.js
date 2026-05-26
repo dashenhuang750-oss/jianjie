@@ -792,11 +792,41 @@ async function loadGuestbookMessages(list, status) {
     state.guestbookMode = "server";
     state.guestbookMessages = Array.isArray(data.messages) ? data.messages : [];
     renderGuestbookMessages(list, status);
+
+    syncLocalMessages(list, status);
   } catch (error) {
     state.guestbookMode = "local";
     state.guestbookMessages = loadLocalGuestbookMessages();
     renderGuestbookMessages(list, status);
     setGuestbookStatus(status, "留言接口还没连上，当前先保存到本机临时留言。", true);
+  }
+}
+
+async function syncLocalMessages(list, status) {
+  const localMessages = loadLocalGuestbookMessages();
+  if (localMessages.length === 0) return;
+
+  let synced = 0;
+  for (const msg of localMessages) {
+    try {
+      await requestGuestbookJson("/api/guestbook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: msg.name, content: msg.content })
+      });
+      synced++;
+    } catch {
+      break;
+    }
+  }
+
+  if (synced > 0) {
+    saveLocalGuestbookMessages(localMessages.slice(synced));
+    const data = await requestGuestbookJson("/api/guestbook").catch(() => null);
+    if (data && Array.isArray(data.messages)) {
+      state.guestbookMessages = data.messages;
+      renderGuestbookMessages(list, status);
+    }
   }
 }
 

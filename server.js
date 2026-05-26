@@ -20,6 +20,10 @@ const ASSET_VERSION = createAssetVersion();
 const RATE_LIMITS = new Map();
 let guestbookMemory = [];
 
+const REDIS_URL = (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || "").replace(/\/$/, "");
+const REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
+const GUESTBOOK_REDIS_KEY = "guestbook:messages";
+
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -47,7 +51,8 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, {
         ok: true,
         uptime: Math.round(process.uptime()),
-        guestbookPersisted: canWriteGuestbook()
+        guestbookPersisted: canWriteGuestbook(),
+        guestbookBackend: REDIS_URL ? "redis" : "file"
       });
     }
 
@@ -57,7 +62,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/guestbook") {
-      return handleGuestbookList(res);
+      return await handleGuestbookList(res);
     }
 
     if (req.method === "POST" && url.pathname === "/api/guestbook") {
@@ -125,9 +130,10 @@ async function handleChat(req, res) {
   }
 }
 
-function handleGuestbookList(res) {
+async function handleGuestbookList(res) {
+  const messages = await loadGuestbook();
   sendJson(res, 200, {
-    messages: loadGuestbook().slice(0, 80)
+    messages: messages.slice(0, 80)
   });
 }
 
@@ -144,7 +150,7 @@ async function handleGuestbookCreate(req, res) {
     return sendJson(res, 400, { error: "留言太短了" });
   }
 
-  const messages = loadGuestbook();
+  const messages = await loadGuestbook();
   const message = {
     id: createId(),
     name,
@@ -153,7 +159,7 @@ async function handleGuestbookCreate(req, res) {
   };
 
   messages.unshift(message);
-  const persisted = saveGuestbook(messages.slice(0, 200));
+  const persisted = await saveGuestbook(messages.slice(0, 200));
   sendJson(res, 201, { message, persisted });
 }
 
@@ -175,14 +181,14 @@ async function handleGuestbookDelete(req, res, url) {
     return sendJson(res, 403, { error: "管理员密码不正确" });
   }
 
-  const messages = loadGuestbook();
+  const messages = await loadGuestbook();
   const nextMessages = messages.filter((message) => message.id !== id);
 
   if (nextMessages.length === messages.length) {
     return sendJson(res, 404, { error: "留言不存在" });
   }
 
-  const persisted = saveGuestbook(nextMessages);
+  const persisted = await saveGuestbook(nextMessages);
   sendJson(res, 200, { ok: true, persisted });
 }
 
@@ -298,8 +304,7 @@ function createLocalAnswer(message, profile) {
 
   return [
     matched,
-    voice ? `换成我的说法就是：${voice}` : "",
-    "如果你想得到更像本人的回答，可以在 profile.config.json 里补充更多经历、项目和语气样本。"
+    voice ? `换成我的说法就是：${voice}` : ""
   ].filter(Boolean).join("\n\n");
 }
 
@@ -318,7 +323,13 @@ function loadProfile() {
   return JSON.parse(raw);
 }
 
-function loadGuestbook() {
+async function loadGuestbook() {
+  const redisMessages = await loadGuestbookFromRedis();
+  if (redisMessages !== null) {
+    guestbookMemory = redisMessages;
+    return redisMessages;
+  }
+
   try {
     if (!fs.existsSync(GUESTBOOK_PATH)) return guestbookMemory;
     const raw = fs.readFileSync(GUESTBOOK_PATH, "utf8");
@@ -331,13 +342,44 @@ function loadGuestbook() {
   }
 }
 
-function saveGuestbook(messages) {
+async function saveGuestbook(messages) {
   guestbookMemory = messages;
+  const redisOk = await saveGuestbookToRedis(messages);
   try {
     fs.mkdirSync(path.dirname(GUESTBOOK_PATH), { recursive: true });
     fs.writeFileSync(GUESTBOOK_PATH, JSON.stringify(messages, null, 2), "utf8");
     return true;
   } catch (error) {
+    return redisOk;
+  }
+}
+
+async function loadGuestbookFromRedis() {
+  if (!REDIS_URL || !REDIS_TOKEN) return null;
+  try {
+    const res = await fetch(`${REDIS_URL}/get/${GUESTBOOK_REDIS_KEY}`, {
+      headers: { Authorization: `Bearer ${REDIS_TOKEN}` }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.result) return [];
+    const messages = JSON.parse(data.result);
+    return Array.isArray(messages) ? messages.filter(isGuestbookMessage) : [];
+  } catch {
+    return null;
+  }
+}
+
+async function saveGuestbookToRedis(messages) {
+  if (!REDIS_URL || !REDIS_TOKEN) return false;
+  try {
+    const res = await fetch(`${REDIS_URL}/set/${GUESTBOOK_REDIS_KEY}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+      body: JSON.stringify(messages)
+    });
+    return res.ok;
+  } catch {
     return false;
   }
 }
