@@ -291,13 +291,13 @@ body.is-booting .signature-canvas {
   --line: rgba(37, 99, 235, 0.18);
   color: #0f172a;
   background:
-    linear-gradient(rgba(37, 99, 235, 0.075) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(14, 165, 233, 0.06) 1px, transparent 1px),
-    radial-gradient(circle at 68% 17%, rgba(125, 211, 252, 0.42), transparent 34%),
-    radial-gradient(circle at 22% 39%, rgba(191, 219, 254, 0.36), transparent 36%),
-    radial-gradient(circle at 78% 62%, rgba(195, 181, 253, 0.144), transparent 31%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(226, 242, 255, 0.2)),
-    rgba(248, 252, 255, 0.4);
+    linear-gradient(rgba(37, 99, 235, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 68% 17%, rgba(125, 211, 252, 0.5), transparent 34%),
+    radial-gradient(circle at 22% 39%, rgba(191, 219, 254, 0.44), transparent 36%),
+    radial-gradient(circle at 78% 62%, rgba(195, 181, 253, 0.2), transparent 31%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(226, 242, 255, 0.32)),
+    rgba(248, 252, 255, 0.55);
   background-size: 44px 44px, 44px 44px, auto, auto;
   border-color: rgba(191, 219, 254, 0.42);
   box-shadow:
@@ -699,16 +699,18 @@ body.is-booting .signature-canvas {
   margin-top: 9px;
   font-size: clamp(20px, 2.4vw, 28px);
   line-height: 1.1;
+  color: #0d1117;
+  font-weight: 750;
 }
 
 .module-card p {
   margin: 8px 0 0;
-  color: var(--paper-muted);
+  color: #24292f;
   font-size: 14px;
 }
 
 .card-index {
-  color: var(--paper-muted);
+  color: #24292f;
   font-size: 12px;
   font-weight: 850;
 }
