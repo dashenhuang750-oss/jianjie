@@ -17,7 +17,6 @@ const GUESTBOOK_PATH = process.env.GUESTBOOK_PATH
   ? path.resolve(ROOT, process.env.GUESTBOOK_PATH)
   : path.join(ROOT, "data", "guestbook.json");
 const JSON_LIMIT_BYTES = 64 * 1024;
-const ASSET_VERSION = createAssetVersion();
 const RATE_LIMITS = new Map();
 let guestbookMemory = [];
 
@@ -573,9 +572,10 @@ function sendHtml(res, status, content, requestPath = "") {
 }
 
 function injectAssetVersion(html) {
+  const assetVersion = createAssetVersion();
   return html.replace(
     /\b(href|src)="(\/(?:styles\.css|app\.js))(?:\?v=[^"]*)?"/g,
-    (match, attr, assetPath) => `${attr}="${assetPath}?v=${ASSET_VERSION}"`
+    (match, attr, assetPath) => `${attr}="${assetPath}?v=${assetVersion}"`
   );
 }
 

@@ -284,7 +284,7 @@ function setupStageMap() {
 
     button.addEventListener("mouseleave", () => {
       elements.stageReadoutLabel.textContent = "Profile Map";
-      elements.stageReadoutTitle.textContent = "移动鼠标探索模块";
+      elements.stageReadoutTitle.textContent = "";
       highlightStageNode(state.activeModuleId);
     });
 
@@ -366,18 +366,18 @@ function drawStageMap(timestamp = performance.now()) {
   const time = Date.now() * 0.00072;
 
   const orbitGradient = context.createLinearGradient(0, 0, width, height);
-  orbitGradient.addColorStop(0, "rgba(37, 99, 235, 0.18)");
-  orbitGradient.addColorStop(0.48, "rgba(14, 165, 233, 0.24)");
-  orbitGradient.addColorStop(1, "rgba(167, 139, 250, 0.16)");
+  orbitGradient.addColorStop(0, "rgba(255, 255, 255, 0.28)");
+  orbitGradient.addColorStop(0.48, "rgba(73, 86, 94, 0.26)");
+  orbitGradient.addColorStop(1, "rgba(255, 255, 255, 0.18)");
 
   context.lineWidth = 1.1;
   context.strokeStyle = orbitGradient;
   drawEllipse(context, centerX, centerY, radiusX, radiusY, -0.18);
   drawEllipse(context, centerX, centerY, radiusX * 0.72, radiusY * 0.72, 0.28);
   drawEllipse(context, centerX, centerY, radiusX * 1.08, radiusY * 0.58, 0.55);
-  drawMovingOrbit(context, centerX, centerY, radiusX * 1.02, radiusY * 0.68, -0.14, time * 0.8, "rgba(37, 99, 235, 0.34)", [18, 20]);
-  drawMovingOrbit(context, centerX, centerY, radiusX * 0.78, radiusY * 0.88, 0.36, -time * 0.72, "rgba(14, 165, 233, 0.28)", [10, 16]);
-  drawMovingOrbit(context, centerX, centerY, radiusX * 1.18, radiusY * 0.48, 0.62, time * 0.5, "rgba(167, 139, 250, 0.22)", [7, 22]);
+  drawMovingOrbit(context, centerX, centerY, radiusX * 1.02, radiusY * 0.68, -0.14, time * 0.8, "rgba(255, 255, 255, 0.42)", [18, 20]);
+  drawMovingOrbit(context, centerX, centerY, radiusX * 0.78, radiusY * 0.88, 0.36, -time * 0.72, "rgba(48, 58, 64, 0.24)", [10, 16]);
+  drawMovingOrbit(context, centerX, centerY, radiusX * 1.18, radiusY * 0.48, 0.62, time * 0.5, "rgba(255, 255, 255, 0.22)", [7, 22]);
 
   drawStageGrains(context, width, height, time);
 
@@ -389,7 +389,7 @@ function drawStageMap(timestamp = performance.now()) {
     };
   });
 
-  context.strokeStyle = "rgba(37, 99, 235, 0.26)";
+  context.strokeStyle = "rgba(255, 255, 255, 0.24)";
   context.beginPath();
   points.forEach((point, index) => {
     if (index === 0) context.moveTo(point.x, point.y);
@@ -398,7 +398,7 @@ function drawStageMap(timestamp = performance.now()) {
   context.closePath();
   context.stroke();
 
-  context.strokeStyle = "rgba(14, 165, 233, 0.16)";
+  context.strokeStyle = "rgba(48, 58, 64, 0.16)";
   points.forEach((point, index) => {
     const driftX = Math.sin(time + index * 0.8) * 10;
     const driftY = Math.cos(time * 0.9 + index) * 8;
@@ -412,9 +412,9 @@ function drawStageMap(timestamp = performance.now()) {
   const pulseY = centerY + Math.sin(time * 1.05) * radiusY * 0.86;
   const pulseSize = 88 + Math.sin(time * 2.2) * 10;
   const gradient = context.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, pulseSize);
-  gradient.addColorStop(0, "rgba(37, 99, 235, 0.24)");
-  gradient.addColorStop(0.45, "rgba(14, 165, 233, 0.1)");
-  gradient.addColorStop(1, "rgba(96, 165, 250, 0)");
+  gradient.addColorStop(0, "rgba(255, 255, 255, 0.28)");
+  gradient.addColorStop(0.45, "rgba(112, 124, 132, 0.12)");
+  gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
   context.fillStyle = gradient;
   context.beginPath();
   context.arc(pulseX, pulseY, pulseSize, 0, Math.PI * 2);
@@ -461,10 +461,10 @@ function drawStageGrains(context, width, height, time) {
     ) * height;
     const alpha = grain.alpha + (wave + 1) * 0.036;
     const color = grain.tone === 0
-      ? `rgba(37, 99, 235, ${alpha})`
+      ? `rgba(255, 255, 255, ${alpha * 0.92})`
       : grain.tone === 1
-        ? `rgba(14, 165, 233, ${alpha * 0.9})`
-        : `rgba(139, 92, 246, ${alpha * 0.78})`;
+        ? `rgba(58, 69, 76, ${alpha * 0.72})`
+        : `rgba(174, 184, 190, ${alpha * 0.78})`;
     context.fillStyle = color;
     context.fillRect(x, y, grain.size, grain.size);
   }
@@ -1194,10 +1194,6 @@ function setupCanvas() {
 
     frame += 1;
     context.clearRect(0, 0, width, height);
-    context.fillStyle = elements.body.dataset.theme === "dark"
-      ? "rgba(8, 11, 12, 0.42)"
-      : "rgba(238, 241, 234, 0.36)";
-    context.fillRect(0, 0, width, height);
 
     for (const particle of particles) {
       const targetX = state.pointer.x * width;
@@ -1394,7 +1390,7 @@ function drawConnections(context, particles, width) {
       if (distance < limit) {
         const edgeBoost = a.edge || b.edge ? 1.12 : 0.72;
         const alpha = (1 - distance / limit) * 0.2 * edgeBoost;
-        context.strokeStyle = `rgba(48, 58, 64, ${alpha * 0.72})`;
+        context.strokeStyle = `rgba(214, 236, 255, ${alpha * 0.92})`;
         context.lineWidth = 1;
         context.beginPath();
         context.moveTo(a.x, a.y);
@@ -1413,13 +1409,13 @@ function drawParticles(context, particles, frame) {
     const alpha = particle.alpha + pulse * (particle.edge ? 0.18 : 0.09);
     const radius = particle.size + pulse * (particle.edge ? 0.55 : 0.32);
     const color = particle.tone === 0
-      ? [42, 52, 58]
+      ? [206, 236, 255]
       : particle.tone === 1
-        ? [110, 122, 130]
-        : [185, 193, 198];
+        ? [170, 205, 255]
+        : [238, 244, 255];
 
     if (particle.edge) {
-      context.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.18})`;
+      context.fillStyle = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${alpha * 0.2})`;
       context.beginPath();
       context.arc(particle.x, particle.y, radius * 2.8, 0, Math.PI * 2);
       context.fill();
