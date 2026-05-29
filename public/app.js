@@ -1,3 +1,5 @@
+const MOBILE_QUERY = window.matchMedia("(max-width: 720px), (pointer: coarse)");
+
 const state = {
   profile: null,
   modules: [],
@@ -7,6 +9,8 @@ const state = {
   assistantReady: false,
   guestbookMessages: [],
   guestbookMode: "server",
+  guestbookBackend: "server",
+  guestbookDurable: false,
   guestbookAdminPassword: localStorage.getItem("guestbook-admin-password") || "",
   stageGrains: [],
   stageFrameAt: 0,
@@ -14,6 +18,10 @@ const state = {
   pointer: { x: 0.5, y: 0.5, active: false },
   reduceMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches
 };
+
+function isMobileView() {
+  return MOBILE_QUERY.matches || window.innerWidth <= 720;
+}
 
 const VISUAL_ACCENTS = ["#172027", "#5f6b73", "#9aa4aa", "#3e4a52", "#b8c0c5", "#2d363d"];
 
@@ -113,6 +121,8 @@ function bindGlobalEvents() {
   });
 
   window.addEventListener("pointermove", (event) => {
+    if (isMobileView() && event.pointerType === "touch") return;
+
     const mx = event.clientX / Math.max(window.innerWidth, 1);
     const my = event.clientY / Math.max(window.innerHeight, 1);
     state.pointer.x = mx;
@@ -158,10 +168,18 @@ function bindChatEvents() {
 
 function renderProfile(profile) {
   const name = profile.name || "你的名字";
-  document.title = `${name} - AI 个人简介`;
+  const latinName = profile.latinName || "";
+  document.title = profile.siteTitle || `${name} | 数理建模 · 统计建模 · 数据分析`;
+  updateMeta("name", "description", profile.siteDescription || profile.summary || "");
+  updateMeta("property", "og:title", profile.siteTitle || document.title);
+  updateMeta("property", "og:description", profile.siteDescription || profile.summary || "");
+
   elements.brandName.textContent = name;
   elements.brandInitial.textContent = name.trim().slice(0, 1).toUpperCase() || "P";
-  elements.name.textContent = name;
+  elements.name.replaceChildren(createNameLine(name, "name-primary"));
+  if (latinName) {
+    elements.name.append(createNameLine(latinName, "name-latin"));
+  }
   elements.role.textContent = profile.role || "创作者";
   elements.headline.textContent = profile.headline || "";
   elements.location.textContent = profile.location || "";
@@ -182,11 +200,18 @@ function renderProfile(profile) {
   }));
 
   elements.linkList.replaceChildren(...(profile.links || []).map((link) => {
+    const label = link.label && link.value ? `${link.label}：${link.value}` : link.value || link.label || "Link";
+    if (!link.href) {
+      const item = document.createElement("span");
+      item.textContent = label;
+      return item;
+    }
+
     const anchor = document.createElement("a");
-    anchor.href = link.href || "#";
-    anchor.textContent = link.value || link.label || "Link";
+    anchor.href = link.href;
+    anchor.textContent = label;
     anchor.target = anchor.href.startsWith("http") ? "_blank" : "";
-    anchor.rel = "noreferrer";
+    anchor.rel = anchor.target ? "noreferrer" : "";
     return anchor;
   }));
 
@@ -206,8 +231,24 @@ function renderProfile(profile) {
   }));
 }
 
+function createNameLine(text, className) {
+  const span = document.createElement("span");
+  span.className = className;
+  span.textContent = text;
+  return span;
+}
+
+function updateMeta(key, name, content) {
+  if (!content) return;
+  const selector = key === "property" ? `meta[property="${name}"]` : `meta[name="${name}"]`;
+  const meta = document.querySelector(selector);
+  if (meta) {
+    meta.setAttribute("content", content);
+  }
+}
+
 function renderModules() {
-  elements.moduleCount.textContent = `${state.modules.length} modules`;
+  elements.moduleCount.textContent = `${state.modules.length} 个模块`;
 
   elements.moduleGrid.replaceChildren(...state.modules.map((module, index) => {
     const card = document.createElement("button");
@@ -317,8 +358,11 @@ function highlightStageNode(moduleId) {
 }
 
 function drawStageMap(timestamp = performance.now()) {
+  const compact = isMobileView();
+
   if (!state.reduceMotion) {
-    if (state.stageFrameAt && timestamp - state.stageFrameAt < 28) {
+    const minFrameGap = compact ? 52 : 28;
+    if (state.stageFrameAt && timestamp - state.stageFrameAt < minFrameGap) {
       requestAnimationFrame(drawStageMap);
       return;
     }
@@ -335,7 +379,7 @@ function drawStageMap(timestamp = performance.now()) {
   const canvas = elements.stageCanvas;
   const context = canvas.getContext("2d");
   const rect = canvas.getBoundingClientRect();
-  const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+  const ratio = Math.min(window.devicePixelRatio || 1, compact ? 1.05 : 1.5);
   const width = Math.max(1, rect.width);
   const height = Math.max(1, rect.height);
   const pixelWidth = Math.floor(width * ratio);
@@ -351,11 +395,13 @@ function drawStageMap(timestamp = performance.now()) {
   if (
     state.stageGrains.length === 0 ||
     state.stageGrainsWidth !== Math.round(width) ||
-    state.stageGrainsHeight !== Math.round(height)
+    state.stageGrainsHeight !== Math.round(height) ||
+    state.stageGrainsCompact !== compact
   ) {
     state.stageGrainsWidth = Math.round(width);
     state.stageGrainsHeight = Math.round(height);
-    state.stageGrains = createStageGrains(width, height);
+    state.stageGrainsCompact = compact;
+    state.stageGrains = createStageGrains(width, height, compact);
   }
 
   const centerX = width * 0.5;
@@ -425,8 +471,10 @@ function drawStageMap(timestamp = performance.now()) {
   }
 }
 
-function createStageGrains(width, height) {
-  const count = Math.min(360, Math.max(180, Math.floor((width * height) / 1040)));
+function createStageGrains(width, height, compact = isMobileView()) {
+  const count = compact
+    ? Math.min(150, Math.max(80, Math.floor((width * height) / 2200)))
+    : Math.min(360, Math.max(180, Math.floor((width * height) / 1040)));
   return Array.from({ length: count }, (_, index) => {
     const ring = 0.25 + ((index * 37) % 100) / 130;
     const angle = index * 2.39996;
@@ -565,6 +613,7 @@ function renderModuleDetail(module) {
     elements.moduleTextContent.append(chips);
   }
 
+  renderStructuredContent(module, elements.moduleTextContent);
   renderModuleMedia(module, elements.moduleTextContent);
 
   if (Array.isArray(module.stats) && module.stats.length > 0) {
@@ -605,6 +654,271 @@ function renderModuleDetail(module) {
     }));
     elements.moduleTextContent.append(sectionList);
   }
+}
+
+function renderStructuredContent(module, container) {
+  renderFeatureCards(module.cards, container);
+  renderProjectCards(module.projects, container);
+  renderSkillGroups(module.skillGroups, container);
+  renderTimelineItems(module.timeline, container);
+  renderHonorList(module.honors, container);
+  renderWorkCards(module.works, container);
+  renderContactGrid(module.contacts, container);
+}
+
+function renderFeatureCards(cards, container) {
+  const items = Array.isArray(cards) ? cards : [];
+  if (items.length === 0) return;
+
+  const grid = document.createElement("div");
+  grid.className = "feature-card-grid";
+  grid.append(...items.map((card) => {
+    const item = document.createElement("article");
+    item.className = "feature-card";
+
+    if (card.label) {
+      const label = document.createElement("span");
+      label.className = "card-label";
+      label.textContent = card.label;
+      item.append(label);
+    }
+
+    const title = document.createElement("h3");
+    title.textContent = card.title || "";
+
+    const description = document.createElement("p");
+    description.textContent = card.description || "";
+
+    item.append(title, description);
+    appendTagRow(item, card.tags);
+    return item;
+  }));
+
+  container.append(grid);
+}
+
+function renderProjectCards(projects, container) {
+  const items = Array.isArray(projects) ? projects : [];
+  if (items.length === 0) return;
+
+  const list = document.createElement("div");
+  list.className = "project-list";
+  list.append(...items.map((project) => {
+    const item = document.createElement("article");
+    item.className = "project-card";
+
+    const header = document.createElement("div");
+    header.className = "project-card-header";
+
+    const titleGroup = document.createElement("div");
+    const title = document.createElement("h3");
+    title.textContent = project.title || "";
+    titleGroup.append(title);
+
+    if (project.role) {
+      const role = document.createElement("p");
+      role.className = "project-role";
+      role.textContent = project.role;
+      titleGroup.append(role);
+    }
+
+    const link = createDetailLink(project);
+    header.append(titleGroup, link);
+
+    const description = document.createElement("p");
+    description.className = "project-description";
+    description.textContent = project.description || "";
+
+    item.append(header, description);
+
+    if (Array.isArray(project.contributions) && project.contributions.length > 0) {
+      const contributionList = document.createElement("ul");
+      contributionList.className = "contribution-list";
+      contributionList.append(...project.contributions.map((contribution) => {
+        const point = document.createElement("li");
+        point.textContent = contribution;
+        return point;
+      }));
+      item.append(contributionList);
+    }
+
+    appendTagRow(item, project.tags);
+    return item;
+  }));
+
+  container.append(list);
+}
+
+function renderSkillGroups(groups, container) {
+  const items = Array.isArray(groups) ? groups : [];
+  if (items.length === 0) return;
+
+  const grid = document.createElement("div");
+  grid.className = "skill-grid";
+  grid.append(...items.map((group) => {
+    const item = document.createElement("article");
+    item.className = "skill-group";
+
+    const title = document.createElement("h3");
+    title.textContent = group.title || "";
+
+    const list = document.createElement("ul");
+    list.append(...(Array.isArray(group.items) ? group.items : []).map((skill) => {
+      const point = document.createElement("li");
+      point.textContent = skill;
+      return point;
+    }));
+
+    item.append(title, list);
+    return item;
+  }));
+
+  container.append(grid);
+}
+
+function renderTimelineItems(timeline, container) {
+  const items = Array.isArray(timeline) ? timeline : [];
+  if (items.length === 0) return;
+
+  const list = document.createElement("div");
+  list.className = "timeline-list";
+  list.append(...items.map((entry) => {
+    const item = document.createElement("article");
+    item.className = "timeline-item";
+
+    const period = document.createElement("span");
+    period.className = "timeline-period";
+    period.textContent = entry.period || "";
+
+    const title = document.createElement("h3");
+    title.textContent = entry.title || "";
+
+    item.append(period, title);
+
+    if (entry.meta) {
+      const meta = document.createElement("p");
+      meta.className = "timeline-meta";
+      meta.textContent = entry.meta;
+      item.append(meta);
+    }
+
+    const body = document.createElement("p");
+    body.className = "timeline-body";
+    body.textContent = entry.body || "";
+    item.append(body);
+
+    appendTagRow(item, entry.tags);
+    return item;
+  }));
+
+  container.append(list);
+}
+
+function renderHonorList(honors, container) {
+  const items = Array.isArray(honors) ? honors : [];
+  if (items.length === 0) return;
+
+  const list = document.createElement("div");
+  list.className = "honor-list";
+  list.append(...items.map((honor, index) => {
+    const item = document.createElement("article");
+    item.className = "honor-item";
+
+    const number = document.createElement("span");
+    number.textContent = String(index + 1).padStart(2, "0");
+
+    const text = document.createElement("p");
+    text.textContent = honor;
+
+    item.append(number, text);
+    return item;
+  }));
+
+  container.append(list);
+}
+
+function renderWorkCards(works, container) {
+  const items = Array.isArray(works) ? works : [];
+  if (items.length === 0) return;
+
+  const grid = document.createElement("div");
+  grid.className = "work-grid";
+  grid.append(...items.map((work) => {
+    const item = document.createElement("article");
+    item.className = "work-card";
+
+    const title = document.createElement("h3");
+    title.textContent = work.title || "";
+
+    const description = document.createElement("p");
+    description.textContent = work.description || "";
+
+    item.append(title, description);
+    appendTagRow(item, work.tags);
+    item.append(createDetailLink(work));
+    return item;
+  }));
+
+  container.append(grid);
+}
+
+function renderContactGrid(contacts, container) {
+  const items = Array.isArray(contacts) ? contacts : [];
+  if (items.length === 0) return;
+
+  const grid = document.createElement("div");
+  grid.className = "contact-grid";
+  grid.append(...items.map((contact) => {
+    const item = contact.href ? document.createElement("a") : document.createElement("div");
+    item.className = "contact-card";
+    if (contact.href) {
+      item.href = contact.href;
+    }
+
+    const label = document.createElement("span");
+    label.textContent = contact.label || "";
+
+    const value = document.createElement("strong");
+    value.textContent = contact.value || "";
+
+    item.append(label, value);
+    return item;
+  }));
+
+  container.append(grid);
+}
+
+function appendTagRow(container, tags) {
+  const items = Array.isArray(tags) ? tags.filter(Boolean) : [];
+  if (items.length === 0) return;
+
+  const row = document.createElement("div");
+  row.className = "mini-tag-row";
+  row.append(...items.map((tag) => {
+    const item = document.createElement("span");
+    item.textContent = tag;
+    return item;
+  }));
+  container.append(row);
+}
+
+function createDetailLink(item) {
+  const label = item.linkLabel || (item.href ? "查看链接" : "Link TODO");
+  if (!item.href) {
+    const placeholder = document.createElement("span");
+    placeholder.className = "detail-link is-disabled";
+    placeholder.setAttribute("aria-label", `${label}，链接待补充`);
+    placeholder.textContent = label;
+    return placeholder;
+  }
+
+  const link = document.createElement("a");
+  link.className = "detail-link";
+  link.href = item.href;
+  link.textContent = label;
+  link.target = link.href.startsWith("http") ? "_blank" : "";
+  link.rel = link.target ? "noreferrer" : "";
+  return link;
 }
 
 function renderModuleMedia(module, container) {
@@ -796,8 +1110,10 @@ async function loadGuestbookMessages(list, status) {
     const data = await requestGuestbookJson("/api/guestbook");
 
     state.guestbookMode = "server";
+    updateGuestbookPersistence(data);
     state.guestbookMessages = Array.isArray(data.messages) ? data.messages : [];
     renderGuestbookMessages(list, status);
+    setGuestbookStatus(status, createGuestbookStorageMessage());
 
     syncLocalMessages(list, status);
   } catch (error) {
@@ -830,10 +1146,31 @@ async function syncLocalMessages(list, status) {
     saveLocalGuestbookMessages(localMessages.slice(synced));
     const data = await requestGuestbookJson("/api/guestbook").catch(() => null);
     if (data && Array.isArray(data.messages)) {
+      updateGuestbookPersistence(data);
       state.guestbookMessages = data.messages;
       renderGuestbookMessages(list, status);
+      setGuestbookStatus(status, createGuestbookStorageMessage("本机暂存留言已同步。"));
     }
   }
+}
+
+function updateGuestbookPersistence(data) {
+  state.guestbookBackend = data && data.backend ? data.backend : "server";
+  state.guestbookDurable = Boolean(data && data.durable);
+}
+
+function createGuestbookStorageMessage(prefix = "") {
+  const lead = prefix ? `${prefix} ` : "";
+  if (state.guestbookDurable) {
+    return `${lead}留言已连接云端存储，重新部署后也会保留。`;
+  }
+  if (state.guestbookBackend === "file") {
+    return `${lead}当前保存到服务器文件，公网重新部署可能会清空；配置 Redis 后可长期保留。`;
+  }
+  if (state.guestbookBackend === "memory") {
+    return `${lead}当前为运行内临时保存，服务重启后可能清空。`;
+  }
+  return `${lead}留言已连接服务器。`;
 }
 
 async function submitGuestbookMessage({ name, content, form, contentInput, status, list }) {
@@ -856,9 +1193,10 @@ async function submitGuestbookMessage({ name, content, form, contentInput, statu
     });
 
     state.guestbookMode = "server";
+    updateGuestbookPersistence(data);
     state.guestbookMessages = [data.message, ...state.guestbookMessages].slice(0, 80);
     contentInput.value = "";
-    setGuestbookStatus(status, data.persisted === false ? "留言已发布，本次运行中可见；文件写入受限。" : "留言已发布。");
+    setGuestbookStatus(status, data.persisted === false ? "留言已发布，本次运行中可见；尚未连接持久存储。" : createGuestbookStorageMessage("留言已发布。"));
     renderGuestbookMessages(list, status);
   } catch (error) {
     const localMessage = createLocalGuestbookMessage(name, cleanContent);
@@ -966,14 +1304,15 @@ async function deleteGuestbookMessage(id, list, status) {
   }
 
   try {
-    await requestGuestbookJson(`/api/guestbook/${encodeURIComponent(id)}`, {
+    const data = await requestGuestbookJson(`/api/guestbook/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password: state.guestbookAdminPassword })
     });
 
+    updateGuestbookPersistence(data);
     state.guestbookMessages = state.guestbookMessages.filter((message) => message.id !== id);
-    setGuestbookStatus(status, "留言已删除。");
+    setGuestbookStatus(status, createGuestbookStorageMessage("留言已删除。"));
     renderGuestbookMessages(list, status);
   } catch (error) {
     setGuestbookStatus(status, error.message, true);
@@ -1168,21 +1507,27 @@ function setupCanvas() {
   let lastDrawAt = 0;
 
   const resize = () => {
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+    const compact = isMobileView();
+    const ratio = Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.5);
     width = window.innerWidth;
     height = window.innerHeight;
     canvas.width = Math.floor(width * ratio);
     canvas.height = Math.floor(height * ratio);
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-    const count = Math.min(220, Math.max(100, Math.floor((width * height) / 9500)));
+    const count = compact
+      ? Math.min(90, Math.max(42, Math.floor((width * height) / 18000)))
+      : Math.min(220, Math.max(100, Math.floor((width * height) / 9500)));
     particles = Array.from({ length: count }, (_, index) => createParticle(index, width, height));
   };
 
   const draw = (timestamp = performance.now()) => {
+    const compact = isMobileView();
     const moduleActive = elements.moduleView.classList.contains("is-active");
     const scrolling = timestamp < state.scrollingUntil;
-    const minFrameGap = scrolling ? 86 : moduleActive ? 45 : 25;
+    const minFrameGap = compact
+      ? scrolling ? 140 : moduleActive ? 95 : 54
+      : scrolling ? 86 : moduleActive ? 45 : 25;
 
     if (!state.reduceMotion) {
       if (lastDrawAt && timestamp - lastDrawAt < minFrameGap) {
@@ -1216,7 +1561,7 @@ function setupCanvas() {
       if (particle.y > height + 30) particle.y = -30;
     }
 
-    if (!scrolling) {
+    if (!scrolling && (!compact || frame % 2 === 0)) {
       drawConnections(context, particles, width);
     }
     drawParticles(context, particles, frame);
@@ -1239,16 +1584,20 @@ function setupCloudCanvas() {
   let height = 0;
   let points = [];
   let frame = 0;
+  let lastDrawAt = 0;
 
   const resize = () => {
-    const ratio = Math.min(window.devicePixelRatio || 1, 1.4);
+    const compact = isMobileView();
+    const ratio = Math.min(window.devicePixelRatio || 1, compact ? 1 : 1.4);
     width = Math.max(1, window.innerWidth);
     height = Math.max(1, window.innerHeight);
     canvas.width = Math.floor(width * ratio);
     canvas.height = Math.floor(height * ratio);
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-    const count = Math.min(120, Math.max(55, Math.floor((width * height) / 18000)));
+    const count = compact
+      ? Math.min(55, Math.max(24, Math.floor((width * height) / 42000)))
+      : Math.min(120, Math.max(55, Math.floor((width * height) / 18000)));
     points = Array.from({ length: count }, (_, index) => {
       const row = index % 4;
       return {
@@ -1261,8 +1610,15 @@ function setupCloudCanvas() {
     });
   };
 
-  const draw = () => {
+  const draw = (timestamp = performance.now()) => {
     if (state.reduceMotion) return;
+    const compact = isMobileView();
+    const minFrameGap = compact ? 92 : 46;
+    if (lastDrawAt && timestamp - lastDrawAt < minFrameGap) {
+      requestAnimationFrame(draw);
+      return;
+    }
+    lastDrawAt = timestamp;
     frame += 1;
     context.clearRect(0, 0, width, height);
 
@@ -1433,8 +1789,11 @@ function normalizeModules(profile) {
     ? [...profile.modules]
     : createDefaultModules(profile);
 
+  const guestbookEnabled = !profile.guestbook || profile.guestbook.enabled !== false;
   const hasGuestbook = modules.some((module) => module.id === "guestbook");
-  const guestbookModules = hasGuestbook ? modules : insertBeforeAssistant(modules, createGuestbookModule());
+  const guestbookModules = guestbookEnabled && !hasGuestbook
+    ? insertBeforeAssistant(modules, createGuestbookModule())
+    : modules;
   const hasAssistant = guestbookModules.some((module) => module.id === "assistant");
   return hasAssistant ? guestbookModules : [...guestbookModules, createAssistantModule()];
 }

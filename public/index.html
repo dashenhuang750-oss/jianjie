@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#080b0c" />
-    <meta name="description" content="黄文浩的互动式个人简介网站，包含模块化介绍、留言板和 AI 风格问答。" />
+    <meta name="theme-color" content="#111714" />
+    <meta name="description" content="黄文浩的个人网站，展示数学建模、统计建模、数据分析、Desmos 可视化、竞赛经历与公共服务经历。" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="黄文浩 - AI 个人简介" />
-    <meta property="og:description" content="一个可以互动、提问和浏览模块的个人简介网站。" />
-    <title>个人简介 - AI 问答</title>
+    <meta property="og:title" content="黄文浩 | 数理建模 · 统计建模 · 数据分析" />
+    <meta property="og:description" content="黄文浩的个人网站，展示数学建模、统计建模、数据分析、Desmos 可视化、竞赛经历与公共服务经历。" />
+    <title>黄文浩 | 数理建模 · 统计建模 · 数据分析</title>
     <style>
       body.is-booting .app-shell {
         opacity: 0;
@@ -19,7 +19,7 @@
         opacity: 0;
       }
     </style>
-    <link rel="stylesheet" href="/styles.css?v=25" />
+    <link rel="stylesheet" href="/styles.css?v=26" />
   </head>
   <body class="is-booting">
     <noscript>
@@ -44,7 +44,7 @@
         </button>
 
         <div class="header-actions">
-          <a class="cover-return" href="/">封面</a>
+          <a class="cover-return" href="/">首页</a>
           <span id="availability" class="status-pill">开放交流</span>
           <button id="themeToggle" class="icon-button" type="button" aria-label="切换明暗模式">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -68,21 +68,21 @@
 
           <div class="stage-meta">
             <span id="location">中国</span>
-            <span>Interactive profile</span>
+            <span>Modeling Portfolio</span>
           </div>
 
-          <p id="profile-role" class="role">AI 产品设计师 / 创作者</p>
+          <p id="profile-role" class="role">数理建模 / 统计建模 / 数据分析</p>
           <h1 id="profile-name">你的名字</h1>
-          <p id="headline" class="headline">把复杂想法做成清晰、漂亮、可用的产品。</p>
+          <p id="headline" class="headline">把复杂问题拆解成可以理解、可以验证、可以呈现的模型。</p>
 
           <div class="hero-actions">
-            <button class="primary-action" type="button" data-open-module="assistant">
-              <span>问我问题</span>
+            <button class="primary-action" type="button" data-open-module="projects">
+              <span>查看项目</span>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h13M13 6l6 6-6 6" />
               </svg>
             </button>
-            <button class="secondary-action" type="button" data-open-module="about">查看简介</button>
+            <button class="secondary-action" type="button" data-open-module="contact">联系我</button>
           </div>
         </aside>
 
@@ -90,7 +90,7 @@
           <div class="console-heading">
             <div>
               <p class="eyebrow">Profile Studio</p>
-              <h2>选择一个模块进入</h2>
+              <h2>进入个人主页</h2>
             </div>
             <span id="moduleCount" class="module-count">0 modules</span>
           </div>
@@ -194,6 +194,6 @@
         }, 3500);
       })();
     </script>
-    <script src="/app.js?v=23" defer></script>
+    <script src="/app.js?v=24" defer></script>
   </body>
 </html>

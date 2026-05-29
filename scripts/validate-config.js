@@ -2,15 +2,16 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const configPath = path.join(root, "profile.config.json");
+const profileModulePath = path.join(root, "data", "profile.js");
+const legacyConfigPath = path.join(root, "profile.config.json");
 const errors = [];
 
 let profile;
 
 try {
-  profile = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  profile = loadProfile();
 } catch (error) {
-  fail(`profile.config.json is not valid JSON: ${error.message}`);
+  fail(`profile data is invalid: ${error.message}`);
 }
 
 if (profile) {
@@ -65,6 +66,16 @@ function requireText(key) {
   if (!profile[key] || typeof profile[key] !== "string") {
     fail(`${key} is required`);
   }
+}
+
+function loadProfile() {
+  if (fs.existsSync(profileModulePath)) {
+    delete require.cache[require.resolve(profileModulePath)];
+    const data = require(profileModulePath);
+    return data && data.default ? data.default : data;
+  }
+
+  return JSON.parse(fs.readFileSync(legacyConfigPath, "utf8"));
 }
 
 function validateLinks(links) {

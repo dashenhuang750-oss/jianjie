@@ -5,7 +5,8 @@ const path = require("node:path");
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
-const PROFILE_PATH = path.join(ROOT, "profile.config.json");
+const PROFILE_MODULE_PATH = path.join(ROOT, "data", "profile.js");
+const LEGACY_PROFILE_PATH = path.join(ROOT, "profile.config.json");
 
 loadEnvFile(path.join(ROOT, ".env"));
 loadYamlEnv(path.join(ROOT, "render.yaml"));
@@ -22,7 +23,11 @@ let guestbookMemory = [];
 
 const REDIS_URL = (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || "").replace(/\/$/, "");
 const REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
-const GUESTBOOK_REDIS_KEY = "guestbook:messages";
+const GUESTBOOK_REDIS_KEY = process.env.GUESTBOOK_REDIS_KEY || "guestbook:messages";
+let guestbookStorage = {
+  backend: REDIS_URL && REDIS_TOKEN ? "redis" : "file",
+  durable: Boolean(REDIS_URL && REDIS_TOKEN)
+};
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -51,8 +56,10 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, {
         ok: true,
         uptime: Math.round(process.uptime()),
-        guestbookPersisted: canWriteGuestbook(),
-        guestbookBackend: REDIS_URL ? "redis" : "file"
+        guestbookPersisted: isGuestbookDurable() || canWriteGuestbook(),
+        guestbookBackend: getGuestbookBackend(),
+        guestbookPersistentAcrossDeploys: isGuestbookDurable(),
+        guestbookCloudConfigured: hasRedisGuestbook()
       });
     }
 
@@ -133,7 +140,9 @@ async function handleChat(req, res) {
 async function handleGuestbookList(res) {
   const messages = await loadGuestbook();
   sendJson(res, 200, {
-    messages: messages.slice(0, 80)
+    messages: messages.slice(0, 80),
+    backend: getGuestbookBackend(),
+    durable: isGuestbookDurable()
   });
 }
 
@@ -159,8 +168,13 @@ async function handleGuestbookCreate(req, res) {
   };
 
   messages.unshift(message);
-  const persisted = await saveGuestbook(messages.slice(0, 200));
-  sendJson(res, 201, { message, persisted });
+  const saveResult = await saveGuestbook(messages.slice(0, 200));
+  sendJson(res, 201, {
+    message,
+    persisted: saveResult.ok,
+    backend: saveResult.backend,
+    durable: saveResult.durable
+  });
 }
 
 async function handleGuestbookDelete(req, res, url) {
@@ -188,8 +202,13 @@ async function handleGuestbookDelete(req, res, url) {
     return sendJson(res, 404, { error: "留言不存在" });
   }
 
-  const persisted = await saveGuestbook(nextMessages);
-  sendJson(res, 200, { ok: true, persisted });
+  const saveResult = await saveGuestbook(nextMessages);
+  sendJson(res, 200, {
+    ok: true,
+    persisted: saveResult.ok,
+    backend: saveResult.backend,
+    durable: saveResult.durable
+  });
 }
 
 async function createOpenAIAnswer({ message, history, profile }) {
@@ -319,7 +338,13 @@ function publicProfile(profile) {
 }
 
 function loadProfile() {
-  const raw = fs.readFileSync(PROFILE_PATH, "utf8");
+  if (fs.existsSync(PROFILE_MODULE_PATH)) {
+    delete require.cache[require.resolve(PROFILE_MODULE_PATH)];
+    const profile = require(PROFILE_MODULE_PATH);
+    return profile && profile.default ? profile.default : profile;
+  }
+
+  const raw = fs.readFileSync(LEGACY_PROFILE_PATH, "utf8");
   return JSON.parse(raw);
 }
 
@@ -327,41 +352,46 @@ async function loadGuestbook() {
   const redisMessages = await loadGuestbookFromRedis();
   if (redisMessages !== null) {
     guestbookMemory = redisMessages;
+    setGuestbookStorageStatus("redis", true);
     return redisMessages;
   }
 
   try {
-    if (!fs.existsSync(GUESTBOOK_PATH)) return guestbookMemory;
+    if (!fs.existsSync(GUESTBOOK_PATH)) {
+      setGuestbookStorageStatus("memory", false);
+      return guestbookMemory;
+    }
     const raw = fs.readFileSync(GUESTBOOK_PATH, "utf8");
     const data = JSON.parse(raw);
     const messages = Array.isArray(data) ? data.filter(isGuestbookMessage) : [];
     guestbookMemory = messages;
+    setGuestbookStorageStatus("file", false);
     return messages;
   } catch (error) {
+    setGuestbookStorageStatus("memory", false);
     return guestbookMemory;
   }
 }
 
 async function saveGuestbook(messages) {
   guestbookMemory = messages;
-  const redisOk = await saveGuestbookToRedis(messages);
-  try {
-    fs.mkdirSync(path.dirname(GUESTBOOK_PATH), { recursive: true });
-    fs.writeFileSync(GUESTBOOK_PATH, JSON.stringify(messages, null, 2), "utf8");
-    return true;
-  } catch (error) {
-    return redisOk;
+
+  if (hasRedisGuestbook()) {
+    const redisOk = await saveGuestbookToRedis(messages);
+    if (redisOk) {
+      saveGuestbookToFile(messages);
+      return createGuestbookSaveResult(true, "redis", true);
+    }
   }
+
+  const fileOk = saveGuestbookToFile(messages);
+  return createGuestbookSaveResult(fileOk, fileOk ? "file" : "memory", false);
 }
 
 async function loadGuestbookFromRedis() {
-  if (!REDIS_URL || !REDIS_TOKEN) return null;
+  if (!hasRedisGuestbook()) return null;
   try {
-    const res = await fetch(`${REDIS_URL}/get/${GUESTBOOK_REDIS_KEY}`, {
-      headers: { Authorization: `Bearer ${REDIS_TOKEN}` }
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
+    const data = await redisCommand(["GET", GUESTBOOK_REDIS_KEY]);
     if (!data.result) return [];
     const messages = JSON.parse(data.result);
     return Array.isArray(messages) ? messages.filter(isGuestbookMessage) : [];
@@ -371,17 +401,59 @@ async function loadGuestbookFromRedis() {
 }
 
 async function saveGuestbookToRedis(messages) {
-  if (!REDIS_URL || !REDIS_TOKEN) return false;
+  if (!hasRedisGuestbook()) return false;
   try {
-    const res = await fetch(`${REDIS_URL}/set/${GUESTBOOK_REDIS_KEY}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
-      body: JSON.stringify(messages)
-    });
-    return res.ok;
+    const data = await redisCommand(["SET", GUESTBOOK_REDIS_KEY, JSON.stringify(messages)]);
+    return Boolean(data.result);
   } catch {
     return false;
   }
+}
+
+async function redisCommand(command) {
+  const res = await fetch(REDIS_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${REDIS_TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(command)
+  });
+  if (!res.ok) {
+    throw new Error(`Redis request failed: ${res.status}`);
+  }
+  return await res.json();
+}
+
+function saveGuestbookToFile(messages) {
+  try {
+    fs.mkdirSync(path.dirname(GUESTBOOK_PATH), { recursive: true });
+    fs.writeFileSync(GUESTBOOK_PATH, JSON.stringify(messages, null, 2), "utf8");
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function hasRedisGuestbook() {
+  return Boolean(REDIS_URL && REDIS_TOKEN);
+}
+
+function createGuestbookSaveResult(ok, backend, durable) {
+  setGuestbookStorageStatus(backend, durable);
+  return { ok, backend, durable };
+}
+
+function setGuestbookStorageStatus(backend, durable) {
+  guestbookStorage = { backend, durable };
+}
+
+function getGuestbookBackend() {
+  return guestbookStorage.backend || (hasRedisGuestbook() ? "redis" : "file");
+}
+
+function isGuestbookDurable() {
+  return Boolean(guestbookStorage.durable);
 }
 
 function canWriteGuestbook() {

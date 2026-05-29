@@ -67,3 +67,16 @@ PORT=8787
 ```
 
 如果不设置 `OPENAI_API_KEY`，网站仍然可以运行，会使用本地风格兜底回答。
+
+## 留言持久化
+
+留言接口会优先使用 Redis/Upstash 云端存储。只要公网部署环境里保留下面这些变量，重新上传代码、重新部署 Render/Railway 后，访客留言也会继续保留。
+
+```text
+REDIS_URL=https://你的-upstash-rest-url
+REDIS_TOKEN=你的-upstash-rest-token
+GUESTBOOK_REDIS_KEY=guestbook:messages
+GUESTBOOK_ADMIN_PASSWORD=你的删除密码
+```
+
+如果没有配置 Redis，留言会写入 `data/guestbook.json`。本地运行时这样没问题，但很多免费公网平台在重新部署后会清空实例文件，所以正式公网建议一定配置 Redis。部署后可以打开 `/api/health`，看到 `guestbookPersistentAcrossDeploys: true` 就表示已经是跨部署保留。

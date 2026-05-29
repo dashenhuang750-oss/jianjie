@@ -18,4 +18,6 @@ services:
       - key: REDIS_URL
         value: "https://saving-kangaroo-103530.upstash.io"
       - key: REDIS_TOKEN
-        value: "gQAAAAAAAZRqAAIgcDFlMzdjYzE0NzU3ZGM0N2VkOGUxOTkxNmNhYTI0ZDM5ZQ"
+        sync: false
+      - key: GUESTBOOK_REDIS_KEY
+        value: guestbook:messages
