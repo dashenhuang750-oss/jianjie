@@ -1521,7 +1521,7 @@ function setupCanvas() {
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
     const count = compact
-      ? Math.min(90, Math.max(42, Math.floor((width * height) / 18000)))
+      ? Math.min(54, Math.max(24, Math.floor((width * height) / 32000)))
       : Math.min(220, Math.max(100, Math.floor((width * height) / 9500)));
     particles = Array.from({ length: count }, (_, index) => createParticle(index, width, height));
   };
@@ -1531,7 +1531,7 @@ function setupCanvas() {
     const moduleActive = elements.moduleView.classList.contains("is-active");
     const scrolling = timestamp < state.scrollingUntil;
     const minFrameGap = compact
-      ? scrolling ? 140 : moduleActive ? 95 : 54
+      ? scrolling ? 220 : moduleActive ? 140 : 84
       : scrolling ? 86 : moduleActive ? 45 : 25;
 
     if (!state.reduceMotion) {
@@ -1566,7 +1566,7 @@ function setupCanvas() {
       if (particle.y > height + 30) particle.y = -30;
     }
 
-    if (!scrolling && (!compact || frame % 2 === 0)) {
+    if (!scrolling && (!compact || frame % 4 === 0)) {
       drawConnections(context, particles, width);
     }
     drawParticles(context, particles, frame);
@@ -1601,7 +1601,7 @@ function setupCloudCanvas() {
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
     const count = compact
-      ? Math.min(55, Math.max(24, Math.floor((width * height) / 42000)))
+      ? Math.min(26, Math.max(12, Math.floor((width * height) / 90000)))
       : Math.min(120, Math.max(55, Math.floor((width * height) / 18000)));
     points = Array.from({ length: count }, (_, index) => {
       const row = index % 4;
@@ -1618,7 +1618,7 @@ function setupCloudCanvas() {
   const draw = (timestamp = performance.now()) => {
     if (state.reduceMotion) return;
     const compact = isMobileView();
-    const minFrameGap = compact ? 92 : 46;
+    const minFrameGap = compact ? 180 : 46;
     if (lastDrawAt && timestamp - lastDrawAt < minFrameGap) {
       requestAnimationFrame(draw);
       return;
@@ -1629,7 +1629,7 @@ function setupCloudCanvas() {
 
     const time = frame * 0.006;
 
-    for (let i = 0; i < 5; i += 1) {
+    for (let i = 0; i < (compact ? 2 : 5); i += 1) {
       const y = height * (0.18 + i * 0.105) + Math.sin(time * 1.8 + i) * 7;
       context.lineWidth = 1;
       context.strokeStyle = "rgba(160, 172, 184, 0.07)";

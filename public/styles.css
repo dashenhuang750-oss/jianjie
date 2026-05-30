@@ -2217,3 +2217,46 @@ body[data-theme="dark"] {
     opacity: 0.18;
   }
 }
+
+@media (max-width: 720px), (pointer: coarse) {
+  :root {
+    --glass-blur: blur(8px) saturate(1.04);
+    --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.045);
+    --shadow-card: 0 8px 18px rgba(15, 23, 42, 0.04);
+    --shadow-hover: 0 12px 26px rgba(15, 23, 42, 0.055);
+  }
+
+  .signature-canvas {
+    opacity: 0.14;
+  }
+
+  .cloud-canvas {
+    display: none;
+  }
+
+  .identity-stage,
+  .profile-console,
+  .module-shell,
+  .module-detail,
+  .module-nav,
+  .module-card,
+  .guestbook-form,
+  .guestbook-panel,
+  .guestbook-list,
+  .guestbook-message,
+  .composer,
+  .assistant .bubble {
+    backdrop-filter: blur(8px) saturate(1.04);
+    -webkit-backdrop-filter: blur(8px) saturate(1.04);
+    box-shadow: var(--shadow-card);
+  }
+
+  .module-view {
+    padding-top: 70px;
+  }
+
+  .module-shell,
+  .module-detail {
+    contain: layout paint;
+  }
+}
