@@ -139,8 +139,9 @@ body {
   justify-items: center;
   gap: 14px;
   width: min(860px, calc(100vw - 96px));
-  margin-top: clamp(148px, 26vh, 240px);
+  margin-top: clamp(132px, 23vh, 220px);
   color: var(--cover-heading);
+  perspective: 960px;
   text-align: center;
 }
 
@@ -156,14 +157,18 @@ body {
 .hero-title {
   color: #1b1230;
   font-family: var(--cover-font);
-  font-size: clamp(48px, 6.2vw, 88px);
+  font-size: clamp(38px, 4.9vw, 70px);
   font-style: normal;
   font-weight: 820;
   line-height: 0.96;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.46),
-    0 16px 38px rgba(27, 18, 48, 0.2);
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    1px 1px 0 rgba(69, 48, 103, 0.72),
+    2px 2px 0 rgba(43, 30, 70, 0.48),
+    0 14px 30px rgba(20, 13, 38, 0.22);
+  transform: perspective(960px) rotateX(8deg) rotateY(-5deg) skewX(-2deg);
+  transform-origin: 50% 62%;
 }
 
 .hero-line {
@@ -227,13 +232,13 @@ body {
 
   .hero-copy {
     width: calc(100vw - 56px);
-    margin-top: 112px;
+    margin-top: 96px;
     text-align: left;
     justify-items: start;
   }
 
   .hero-title {
-    font-size: clamp(42px, 13vw, 68px);
+    font-size: clamp(34px, 11vw, 54px);
   }
 
   .hero-line {
@@ -260,7 +265,8 @@ body {
   }
 
   .hero-title {
-    font-size: clamp(38px, 14vw, 58px);
+    font-size: clamp(32px, 12vw, 48px);
+    transform: perspective(760px) rotateX(6deg) rotateY(-3deg) skewX(-1deg);
   }
 
   .enter-button {
