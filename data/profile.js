@@ -56,7 +56,7 @@ module.exports = {
       chips: ["自驱学习", "建模化思维", "清晰表达"],
       stats: [
         { label: "当前状态", value: "本科在读" },
-        { label: "专业/学院", value: "TODO" },
+        { label: "专业/学院", value: "资源环境学院 · 地理信息科学专业" },
         { label: "核心方向", value: "数理建模" }
       ],
       sections: [
@@ -138,7 +138,7 @@ module.exports = {
             "协调分工与交付节奏，保证团队持续推进。"
           ],
           tags: ["MCM/ICM", "Modeling", "Paper", "Leadership"],
-          linkLabel: "Link TODO"
+          linkLabel: "链接待补充"
         },
         {
           title: "统计建模竞赛 / 训练项目",
@@ -150,7 +150,7 @@ module.exports = {
             "强调模型假设、检验结果与表达质量的一致性。"
           ],
           tags: ["Statistical Modeling", "Data Cleaning", "Interpretability"],
-          linkLabel: "Link TODO"
+          linkLabel: "链接待补充"
         },
         {
           title: "Desmos 数理建模与可视化探索",
@@ -162,14 +162,14 @@ module.exports = {
             "进一步理解特征时间等物理概念。"
           ],
           tags: ["Desmos", "ODE", "Conic Section", "Visualization"],
-          linkLabel: "Link TODO"
+          linkLabel: "链接待补充"
         }
       ],
       works: [
         {
           title: "物理 / 数学模型 1",
           description: "用于沉淀物理或数学建模探索的作品入口。",
-          tags: ["Model", "TODO"],
+          tags: ["Desmos", "Model"],
           href: "https://www.desmos.com/calculator/jeloxwztcy?lang=zh-CN",
           linkLabel: "物理 / 数学模型 1"
         },
@@ -183,7 +183,7 @@ module.exports = {
         {
           title: "模型作品 2",
           description: "用于补充后续统计建模、数据分析或 ODE 探索成果。",
-          tags: ["Modeling", "TODO"],
+          tags: ["Desmos", "Modeling"],
           href: "https://www.desmos.com/calculator/m1r2swmjut?lang=zh-CN",
           linkLabel: "模型作品 2"
         }
@@ -226,7 +226,7 @@ module.exports = {
         {
           period: "2025.09 - 至今",
           title: "西北农林科技大学",
-          meta: "本科在读 · 学院/专业 TODO",
+          meta: "本科在读 · 资源环境学院 · 地理信息科学专业",
           body: "聚焦数理建模、统计建模与数据分析方向。大学阶段专业前 10.6%，曾获专业二等奖学金，高数卷面满分。",
           tags: ["本科", "建模", "数据分析"]
         },
@@ -312,7 +312,7 @@ module.exports = {
     {
       topic: "个人背景",
       keywords: ["你是谁", "介绍", "背景", "个人简介", "学校", "专业"],
-      answer: "我是黄文浩，西北农林科技大学本科在读，关注数理建模、统计建模、物理建模、数据分析与可解释表达。学院/专业信息目前保留为 TODO，不做未经确认的填写。"
+      answer: "我是黄文浩，西北农林科技大学资源环境学院地理信息科学专业本科在读，关注数理建模、统计建模、物理建模、数据分析与可解释表达。"
     },
     {
       topic: "竞赛荣誉",

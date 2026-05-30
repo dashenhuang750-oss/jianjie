@@ -913,7 +913,7 @@ function appendTagRow(container, tags) {
 }
 
 function createDetailLink(item) {
-  const label = item.linkLabel || (item.href ? "查看链接" : "Link TODO");
+  const label = item.linkLabel || (item.href ? "查看链接" : "链接待补充");
   if (!item.href) {
     const placeholder = document.createElement("span");
     placeholder.className = "detail-link is-disabled";
