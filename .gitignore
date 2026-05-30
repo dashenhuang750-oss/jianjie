@@ -6,6 +6,7 @@ Thumbs.db
 .edge-profile/
 .edge-check/
 .railway/
+.guestbook/
 data/guestbook.json
 railway-*-login.ps1
 ui-check-*.png

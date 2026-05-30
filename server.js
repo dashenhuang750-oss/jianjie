@@ -14,9 +14,8 @@ loadYamlEnv(path.join(ROOT, "render.yaml"));
 const PORT = Number(process.env.PORT || 8787);
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const PUBLIC_SITE_URL = cleanPublicUrl(process.env.PUBLIC_SITE_URL || "");
-const GUESTBOOK_PATH = process.env.GUESTBOOK_PATH
-  ? path.resolve(ROOT, process.env.GUESTBOOK_PATH)
-  : path.join(ROOT, "data", "guestbook.json");
+const LEGACY_GUESTBOOK_PATH = path.join(ROOT, "data", "guestbook.json");
+const GUESTBOOK_PATH = resolveGuestbookPath();
 const JSON_LIMIT_BYTES = 64 * 1024;
 const RATE_LIMITS = new Map();
 let guestbookMemory = [];
@@ -24,6 +23,7 @@ let guestbookMemory = [];
 const REDIS_URL = (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || "").replace(/\/$/, "");
 const REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
 const GUESTBOOK_REDIS_KEY = process.env.GUESTBOOK_REDIS_KEY || "guestbook:messages";
+const GUESTBOOK_REDIS_LIST_KEY = process.env.GUESTBOOK_REDIS_LIST_KEY || `${GUESTBOOK_REDIS_KEY}:list`;
 let guestbookStorage = {
   backend: REDIS_URL && REDIS_TOKEN ? "redis" : "file",
   durable: Boolean(REDIS_URL && REDIS_TOKEN)
@@ -148,18 +148,17 @@ async function handleGuestbookList(res) {
 
 async function handleGuestbookCreate(req, res) {
   const body = await readJson(req, JSON_LIMIT_BYTES);
-  const name = cleanText(body.name || "匿名访客").slice(0, 32) || "匿名访客";
+  const name = cleanText(body.name || "????").slice(0, 32) || "????";
   const content = cleanText(body.content || "").slice(0, 600);
 
   if (!content) {
-    return sendJson(res, 400, { error: "留言内容不能为空" });
+    return sendJson(res, 400, { error: "????????" });
   }
 
   if (content.length < 2) {
-    return sendJson(res, 400, { error: "留言太短了" });
+    return sendJson(res, 400, { error: "?????" });
   }
 
-  const messages = await loadGuestbook();
   const message = {
     id: createId(),
     name,
@@ -167,8 +166,7 @@ async function handleGuestbookCreate(req, res) {
     createdAt: new Date().toISOString()
   };
 
-  messages.unshift(message);
-  const saveResult = await saveGuestbook(messages.slice(0, 200));
+  const saveResult = await appendGuestbookMessage(message);
   sendJson(res, 201, {
     message,
     persisted: saveResult.ok,
@@ -184,22 +182,22 @@ async function handleGuestbookDelete(req, res, url) {
   const adminPassword = getGuestbookAdminPassword();
 
   if (!id) {
-    return sendJson(res, 400, { error: "缺少留言 ID" });
+    return sendJson(res, 400, { error: "???? ID" });
   }
 
   if (!adminPassword) {
-    return sendJson(res, 500, { error: "管理员密码还没有配置" });
+    return sendJson(res, 500, { error: "??????????" });
   }
 
   if (!secureEqual(password, adminPassword)) {
-    return sendJson(res, 403, { error: "管理员密码不正确" });
+    return sendJson(res, 403, { error: "????????" });
   }
 
   const messages = await loadGuestbook();
   const nextMessages = messages.filter((message) => message.id !== id);
 
   if (nextMessages.length === messages.length) {
-    return sendJson(res, 404, { error: "留言不存在" });
+    return sendJson(res, 404, { error: "?????" });
   }
 
   const saveResult = await saveGuestbook(nextMessages);
@@ -352,6 +350,13 @@ async function loadGuestbook() {
 
   try {
     if (!fs.existsSync(GUESTBOOK_PATH)) {
+      const seededMessages = loadGuestbookSeed();
+      if (seededMessages.length > 0) {
+        guestbookMemory = seededMessages;
+        saveGuestbookToFile(seededMessages);
+        setGuestbookStorageStatus("file", false);
+        return seededMessages;
+      }
       setGuestbookStorageStatus("memory", false);
       return guestbookMemory;
     }
@@ -382,13 +387,45 @@ async function saveGuestbook(messages) {
   return createGuestbookSaveResult(fileOk, fileOk ? "file" : "memory", false);
 }
 
+async function appendGuestbookMessage(message) {
+  if (hasRedisGuestbook()) {
+    try {
+      const existing = await loadGuestbook();
+      const messages = [message, ...existing.filter((item) => item.id !== message.id)].slice(0, 200);
+      guestbookMemory = messages;
+      await redisCommand(["LPUSH", GUESTBOOK_REDIS_LIST_KEY, JSON.stringify(message)]);
+      await redisCommand(["LTRIM", GUESTBOOK_REDIS_LIST_KEY, "0", "199"]);
+      await saveGuestbookToRedis(messages);
+      saveGuestbookToFile(messages);
+      setGuestbookStorageStatus("redis", true);
+      return createGuestbookSaveResult(true, "redis", true);
+    } catch (error) {
+      // Fall through to file storage so a temporary Redis problem does not drop the visitor's text.
+    }
+  }
+
+  const messages = [message, ...guestbookMemory].slice(0, 200);
+  return await saveGuestbook(messages);
+}
+
 async function loadGuestbookFromRedis() {
   if (!hasRedisGuestbook()) return null;
   try {
+    const listData = await redisCommand(["LRANGE", GUESTBOOK_REDIS_LIST_KEY, "0", "199"]);
+    if (Array.isArray(listData.result) && listData.result.length > 0) {
+      return listData.result
+        .map((item) => parseGuestbookMessage(item))
+        .filter(isGuestbookMessage);
+    }
+
     const data = await redisCommand(["GET", GUESTBOOK_REDIS_KEY]);
     if (!data.result) return [];
     const messages = JSON.parse(data.result);
-    return Array.isArray(messages) ? messages.filter(isGuestbookMessage) : [];
+    const filtered = Array.isArray(messages) ? messages.filter(isGuestbookMessage) : [];
+    if (filtered.length > 0) {
+      await seedGuestbookRedisList(filtered);
+    }
+    return filtered;
   } catch {
     return null;
   }
@@ -398,9 +435,26 @@ async function saveGuestbookToRedis(messages) {
   if (!hasRedisGuestbook()) return false;
   try {
     const data = await redisCommand(["SET", GUESTBOOK_REDIS_KEY, JSON.stringify(messages)]);
+    await seedGuestbookRedisList(messages);
     return Boolean(data.result);
   } catch {
     return false;
+  }
+}
+
+async function seedGuestbookRedisList(messages) {
+  const values = messages.slice(0, 200).map((message) => JSON.stringify(message));
+  await redisCommand(["DEL", GUESTBOOK_REDIS_LIST_KEY]);
+  if (values.length > 0) {
+    await redisCommand(["RPUSH", GUESTBOOK_REDIS_LIST_KEY, ...values]);
+  }
+}
+
+function parseGuestbookMessage(value) {
+  try {
+    return typeof value === "string" ? JSON.parse(value) : value;
+  } catch {
+    return null;
   }
 }
 
@@ -643,6 +697,36 @@ function injectAssetVersion(html) {
     /\b(href|src)="(\/(?:cover\.css|styles\.css|app\.js))(?:\?v=[^"]*)?"/g,
     (match, attr, assetPath) => `${attr}="${assetPath}?v=${assetVersion}"`
   );
+}
+
+function resolveGuestbookPath() {
+  if (process.env.GUESTBOOK_PATH) {
+    return path.resolve(ROOT, process.env.GUESTBOOK_PATH);
+  }
+
+  if (process.env.DATA_DIR) {
+    return path.resolve(ROOT, process.env.DATA_DIR, "guestbook.json");
+  }
+
+  const renderDiskPath = "/var/data";
+  if (process.env.RENDER && fs.existsSync(renderDiskPath)) {
+    return path.join(renderDiskPath, "guestbook.json");
+  }
+
+  return path.join(ROOT, ".guestbook", "guestbook.json");
+}
+
+function loadGuestbookSeed() {
+  if (GUESTBOOK_PATH === LEGACY_GUESTBOOK_PATH || !fs.existsSync(LEGACY_GUESTBOOK_PATH)) {
+    return [];
+  }
+
+  try {
+    const data = JSON.parse(fs.readFileSync(LEGACY_GUESTBOOK_PATH, "utf8"));
+    return Array.isArray(data) ? data.filter(isGuestbookMessage) : [];
+  } catch (error) {
+    return [];
+  }
 }
 
 function sendBuffer(res, status, content, type, requestPath = "") {

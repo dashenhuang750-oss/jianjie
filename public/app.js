@@ -1043,12 +1043,24 @@ function renderGuestbookModule(module) {
   nameInput.maxLength = 32;
   nameInput.autocomplete = "name";
   nameInput.placeholder = "你的名字";
+  nameInput.value = localStorage.getItem("guestbook-display-name") || "";
 
   const contentInput = document.createElement("textarea");
   contentInput.name = "content";
   contentInput.rows = 4;
   contentInput.maxLength = 600;
   contentInput.placeholder = "写点什么...";
+
+  const formMeta = document.createElement("div");
+  formMeta.className = "guestbook-form-meta";
+
+  const privacyHint = document.createElement("span");
+  privacyHint.textContent = "留言会公开展示";
+
+  const counter = document.createElement("span");
+  counter.textContent = "0 / 600";
+
+  formMeta.append(privacyHint, counter);
 
   const submitButton = document.createElement("button");
   submitButton.type = "submit";
@@ -1059,7 +1071,7 @@ function renderGuestbookModule(module) {
   status.className = "guestbook-status";
   status.setAttribute("role", "status");
 
-  form.append(nameInput, contentInput, submitButton, status);
+  form.append(nameInput, contentInput, formMeta, submitButton, status);
 
   const panel = document.createElement("section");
   panel.className = "guestbook-panel";
@@ -1070,7 +1082,11 @@ function renderGuestbookModule(module) {
   const panelTitle = document.createElement("h3");
   panelTitle.textContent = "访客留言";
 
-  panelHeader.append(panelTitle);
+  const messageCount = document.createElement("span");
+  messageCount.className = "guestbook-count";
+  messageCount.textContent = "0 条";
+
+  panelHeader.append(panelTitle, messageCount);
 
   const list = document.createElement("div");
   list.className = "guestbook-list";
@@ -1087,14 +1103,28 @@ function renderGuestbookModule(module) {
       form,
       contentInput,
       status,
-      list
+      list,
+      messageCount
     });
   });
 
-  loadGuestbookMessages(list, status);
+  contentInput.addEventListener("input", () => {
+    counter.textContent = `${contentInput.value.length} / 600`;
+  });
+
+  nameInput.addEventListener("change", () => {
+    const cleanName = cleanGuestbookText(nameInput.value, "").slice(0, 32);
+    if (cleanName) {
+      localStorage.setItem("guestbook-display-name", cleanName);
+    } else {
+      localStorage.removeItem("guestbook-display-name");
+    }
+  });
+
+  loadGuestbookMessages(list, status, messageCount);
 }
 
-async function loadGuestbookMessages(list, status) {
+async function loadGuestbookMessages(list, status, countTarget) {
   list.innerHTML = "<p class=\"guestbook-empty\">正在加载留言...</p>";
 
   try {
@@ -1103,19 +1133,19 @@ async function loadGuestbookMessages(list, status) {
     state.guestbookMode = "server";
     updateGuestbookPersistence(data);
     state.guestbookMessages = Array.isArray(data.messages) ? data.messages : [];
-    renderGuestbookMessages(list, status);
-    setGuestbookStatus(status, createGuestbookStorageMessage());
+    renderGuestbookMessages(list, status, countTarget);
+    setGuestbookStatus(status, "");
 
-    syncLocalMessages(list, status);
+    syncLocalMessages(list, status, countTarget);
   } catch (error) {
     state.guestbookMode = "local";
     state.guestbookMessages = loadLocalGuestbookMessages();
-    renderGuestbookMessages(list, status);
+    renderGuestbookMessages(list, status, countTarget);
     setGuestbookStatus(status, "留言接口还没连上，当前先保存到本机临时留言。", true);
   }
 }
 
-async function syncLocalMessages(list, status) {
+async function syncLocalMessages(list, status, countTarget) {
   const localMessages = loadLocalGuestbookMessages();
   if (localMessages.length === 0) return;
 
@@ -1139,8 +1169,8 @@ async function syncLocalMessages(list, status) {
     if (data && Array.isArray(data.messages)) {
       updateGuestbookPersistence(data);
       state.guestbookMessages = data.messages;
-      renderGuestbookMessages(list, status);
-      setGuestbookStatus(status, createGuestbookStorageMessage("本机暂存留言已同步。"));
+      renderGuestbookMessages(list, status, countTarget);
+      setGuestbookStatus(status, "本机暂存留言已同步。");
     }
   }
 }
@@ -1156,7 +1186,7 @@ function createGuestbookStorageMessage(prefix = "") {
     return `${lead}留言已连接云端存储，重新部署后也会保留。`;
   }
   if (state.guestbookBackend === "file") {
-    return `${lead}当前保存到服务器文件，公网重新部署可能会清空；配置 Redis 后可长期保留。`;
+    return `${lead}当前保存到服务器运行数据文件；配置 Redis 后可跨部署长期保留。`;
   }
   if (state.guestbookBackend === "memory") {
     return `${lead}当前为运行内临时保存，服务重启后可能清空。`;
@@ -1164,7 +1194,7 @@ function createGuestbookStorageMessage(prefix = "") {
   return `${lead}留言已连接服务器。`;
 }
 
-async function submitGuestbookMessage({ name, content, form, contentInput, status, list }) {
+async function submitGuestbookMessage({ name, content, form, contentInput, status, list, messageCount }) {
   const submitButton = form.querySelector("button[type='submit']");
   const cleanContent = cleanGuestbookText(content, "");
 
@@ -1187,23 +1217,28 @@ async function submitGuestbookMessage({ name, content, form, contentInput, statu
     updateGuestbookPersistence(data);
     state.guestbookMessages = [data.message, ...state.guestbookMessages].slice(0, 80);
     contentInput.value = "";
-    setGuestbookStatus(status, data.persisted === false ? "留言已发布，本次运行中可见；尚未连接持久存储。" : createGuestbookStorageMessage("留言已发布。"));
-    renderGuestbookMessages(list, status);
+    contentInput.dispatchEvent(new Event("input"));
+    setGuestbookStatus(status, data.persisted === false ? "留言已发布，本次运行中可见。" : "留言已发布。");
+    renderGuestbookMessages(list, status, messageCount);
   } catch (error) {
     const localMessage = createLocalGuestbookMessage(name, cleanContent);
     state.guestbookMode = "local";
     state.guestbookMessages = [localMessage, ...loadLocalGuestbookMessages()].slice(0, 80);
     saveLocalGuestbookMessages(state.guestbookMessages);
     contentInput.value = "";
+    contentInput.dispatchEvent(new Event("input"));
     setGuestbookStatus(status, "留言接口还没连上，已先保存到本机并显示。", true);
-    renderGuestbookMessages(list, status);
+    renderGuestbookMessages(list, status, messageCount);
   } finally {
     submitButton.disabled = false;
   }
 }
 
-function renderGuestbookMessages(list, status) {
+function renderGuestbookMessages(list, status, countTarget) {
   list.replaceChildren();
+  if (countTarget) {
+    countTarget.textContent = `${state.guestbookMessages.length} 条`;
+  }
 
   if (state.guestbookMessages.length === 0) {
     const empty = document.createElement("p");
@@ -1292,7 +1327,7 @@ async function deleteGuestbookMessage(id, list, status) {
 
     updateGuestbookPersistence(data);
     state.guestbookMessages = state.guestbookMessages.filter((message) => message.id !== id);
-    setGuestbookStatus(status, createGuestbookStorageMessage("留言已删除。"));
+    setGuestbookStatus(status, "留言已删除。");
     renderGuestbookMessages(list, status);
   } catch (error) {
     setGuestbookStatus(status, error.message, true);
