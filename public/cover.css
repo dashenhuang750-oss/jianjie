@@ -1,6 +1,6 @@
 :root {
   --cover-bg: #f8fafc;
-  --cover-surface: rgba(255, 255, 255, 0.18);
+  --cover-surface: rgba(255, 255, 255, 0.1);
   --cover-text: #111827;
   --cover-heading: #0f172a;
   --cover-body: #374151;
@@ -24,7 +24,7 @@ body {
 body {
   color: var(--cover-text);
   background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.55), rgba(241, 245, 249, 0.5)),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.34), rgba(210, 218, 224, 0.32)),
     var(--cover-bg);
 }
 
@@ -36,8 +36,8 @@ body {
   border-radius: 8px;
   background: var(--cover-surface);
   box-shadow: var(--cover-shadow);
-  backdrop-filter: blur(8px) saturate(1.06);
-  -webkit-backdrop-filter: blur(8px) saturate(1.06);
+  backdrop-filter: blur(4px) saturate(1.04);
+  -webkit-backdrop-filter: blur(4px) saturate(1.04);
 }
 
 .cover-frame::before {
@@ -104,20 +104,20 @@ body {
 }
 
 .mountain-layer {
-  opacity: 0.9;
-  filter: grayscale(0.1) saturate(0.86) contrast(1.05) brightness(0.95);
+  opacity: 0.98;
+  filter: grayscale(0.12) saturate(0.82) contrast(1.08) brightness(0.9);
   background-position: center 42%;
 }
 
 .mountain-layer::before {
   background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.54) 0%, rgba(248, 250, 252, 0.3) 31%, rgba(248, 250, 252, 0.06) 58%),
-    linear-gradient(90deg, rgba(248, 250, 252, 0.3), transparent 24%, transparent 76%, rgba(248, 250, 252, 0.32));
+    linear-gradient(180deg, rgba(248, 250, 252, 0.34) 0%, rgba(248, 250, 252, 0.16) 31%, rgba(248, 250, 252, 0.02) 58%),
+    linear-gradient(90deg, rgba(248, 250, 252, 0.16), transparent 24%, transparent 76%, rgba(248, 250, 252, 0.18));
 }
 
 .mountain-layer::after {
   height: 46%;
-  background: linear-gradient(0deg, rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0));
+  background: linear-gradient(0deg, rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.02));
 }
 
 .cloud-canvas {
