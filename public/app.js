@@ -841,6 +841,10 @@ function renderWorkCards(works, container) {
   const items = Array.isArray(works) ? works : [];
   if (items.length === 0) return;
 
+  const heading = document.createElement("h3");
+  heading.className = "work-link-heading";
+  heading.textContent = "作品链接";
+
   const list = document.createElement("ul");
   list.className = "work-link-list";
   list.append(...items.map((work) => {
@@ -865,7 +869,7 @@ function renderWorkCards(works, container) {
     return item;
   }));
 
-  container.append(list);
+  container.append(heading, list);
 }
 
 function renderContactGrid(contacts, container) {
