@@ -177,12 +177,14 @@ module.exports = {
           title: "圆锥曲线切线",
           description: "圆锥曲线切线参数方程推导与 Desmos 可视化作品。",
           tags: ["Desmos", "Conic Section", "Visualization"],
+          href: "https://www.desmos.com/calculator/xigzwsvcbg?lang=zh-CN",
           linkLabel: "圆锥曲线切线"
         },
         {
           title: "模型作品 2",
           description: "用于补充后续统计建模、数据分析或 ODE 探索成果。",
           tags: ["Modeling", "TODO"],
+          href: "https://www.desmos.com/calculator/m1r2swmjut?lang=zh-CN",
           linkLabel: "模型作品 2"
         }
       ]
