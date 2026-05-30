@@ -1,6 +1,6 @@
 :root {
   --cover-bg: #f8fafc;
-  --cover-surface: rgba(255, 255, 255, 0.28);
+  --cover-surface: rgba(255, 255, 255, 0.18);
   --cover-text: #111827;
   --cover-heading: #0f172a;
   --cover-body: #374151;
@@ -29,15 +29,15 @@ body {
 }
 
 .cover-frame {
-  inset: 24px;
-  max-width: var(--cover-container);
-  margin: 0 auto;
+  inset: 24px 38px;
+  max-width: none;
+  margin: 0;
   border: 1px solid var(--cover-border);
-  border-radius: var(--cover-radius);
+  border-radius: 8px;
   background: var(--cover-surface);
   box-shadow: var(--cover-shadow);
-  backdrop-filter: blur(22px) saturate(1.12);
-  -webkit-backdrop-filter: blur(22px) saturate(1.12);
+  backdrop-filter: blur(8px) saturate(1.06);
+  -webkit-backdrop-filter: blur(8px) saturate(1.06);
 }
 
 .cover-frame::before {
@@ -57,8 +57,8 @@ body {
 }
 
 .site-nav {
-  min-height: 72px;
-  padding: 0 clamp(20px, 4vw, 48px);
+  min-height: 66px;
+  padding: 0 clamp(26px, 3vw, 50px);
   color: var(--cover-heading);
   font-size: 14px;
 }
@@ -104,20 +104,20 @@ body {
 }
 
 .mountain-layer {
-  opacity: 0.72;
-  filter: grayscale(0.06) saturate(0.85) contrast(1.04);
+  opacity: 0.9;
+  filter: grayscale(0.1) saturate(0.86) contrast(1.05) brightness(0.95);
   background-position: center 42%;
 }
 
 .mountain-layer::before {
   background:
-    linear-gradient(180deg, rgba(248, 250, 252, 0.6) 0%, rgba(248, 250, 252, 0.28) 36%, rgba(248, 250, 252, 0.06) 62%),
-    linear-gradient(90deg, rgba(248, 250, 252, 0.7), transparent 30%, transparent 70%, rgba(248, 250, 252, 0.65));
+    linear-gradient(180deg, rgba(248, 250, 252, 0.54) 0%, rgba(248, 250, 252, 0.3) 31%, rgba(248, 250, 252, 0.06) 58%),
+    linear-gradient(90deg, rgba(248, 250, 252, 0.3), transparent 24%, transparent 76%, rgba(248, 250, 252, 0.32));
 }
 
 .mountain-layer::after {
   height: 46%;
-  background: linear-gradient(0deg, rgba(15, 23, 42, 0.22), rgba(15, 23, 42, 0));
+  background: linear-gradient(0deg, rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0));
 }
 
 .cloud-canvas {
@@ -136,46 +136,49 @@ body {
 }
 
 .hero-copy {
-  gap: 18px;
-  width: min(760px, calc(100vw - 88px));
-  margin-top: clamp(96px, 16vh, 156px);
+  justify-items: center;
+  gap: 16px;
+  width: min(860px, calc(100vw - 96px));
+  margin-top: clamp(110px, 20vh, 190px);
   color: var(--cover-heading);
+  text-align: center;
 }
 
 .hero-kicker {
   color: var(--cover-teal);
-  font-size: clamp(12px, 1.2vw, 14px);
+  font-size: clamp(12px, 1.15vw, 15px);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .hero-title {
   color: var(--cover-heading);
   font-family: var(--cover-font);
-  font-size: clamp(44px, 7vw, 72px);
+  font-size: clamp(82px, 11vw, 146px);
   font-style: normal;
-  font-weight: 800;
-  line-height: 1.02;
+  font-weight: 850;
+  line-height: 0.9;
   letter-spacing: 0;
-  text-shadow: none;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
 .hero-line {
   max-width: 620px;
-  margin-top: 0;
-  color: var(--cover-body);
-  font-size: clamp(16px, 1.55vw, 19px);
-  line-height: 1.85;
-  text-shadow: none;
+  margin-top: 2px;
+  color: rgba(248, 250, 252, 0.88);
+  font-size: clamp(18px, 1.6vw, 24px);
+  font-weight: 650;
+  line-height: 1.6;
+  text-shadow: 0 2px 18px rgba(15, 23, 42, 0.42);
 }
 
 .enter-button {
-  min-height: 48px;
-  margin-top: 4px;
-  padding: 0 20px;
-  border: 1px solid var(--cover-heading);
-  border-radius: 14px;
+  min-height: 46px;
+  margin-top: 2px;
+  padding: 0 19px;
+  border: 1px solid rgba(15, 23, 42, 0.8);
+  border-radius: 999px;
   color: #ffffff;
   background: var(--cover-heading);
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
@@ -221,10 +224,11 @@ body {
     width: calc(100vw - 56px);
     margin-top: 86px;
     text-align: left;
+    justify-items: start;
   }
 
   .hero-title {
-    font-size: clamp(42px, 13vw, 64px);
+    font-size: clamp(58px, 20vw, 106px);
   }
 
   .hero-line {
@@ -251,7 +255,7 @@ body {
   }
 
   .hero-title {
-    font-size: clamp(38px, 14vw, 54px);
+    font-size: clamp(54px, 21vw, 86px);
   }
 
   .enter-button {
