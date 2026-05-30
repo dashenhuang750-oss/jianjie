@@ -865,6 +865,40 @@ body.is-booting .signature-canvas {
   border-color: var(--color-blue);
 }
 
+.work-link-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-6) 0 0;
+  padding-left: 1.2em;
+  color: var(--color-gold);
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.45;
+}
+
+.work-link-list a,
+.work-link-placeholder {
+  color: var(--color-heading);
+  text-underline-offset: 0.16em;
+}
+
+.work-link-list a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(15, 23, 42, 0.45);
+}
+
+.work-link-list a:hover {
+  color: var(--color-blue);
+  text-decoration-color: currentColor;
+}
+
+.work-link-placeholder {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(15, 23, 42, 0.2);
+  opacity: 0.68;
+}
+
 .module-view {
   position: fixed;
   inset: 0;

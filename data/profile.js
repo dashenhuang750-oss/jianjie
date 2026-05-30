@@ -256,19 +256,20 @@ module.exports = {
           title: "物理 / 数学模型 1",
           description: "用于沉淀物理或数学建模探索的作品入口。",
           tags: ["Model", "TODO"],
-          linkLabel: "Link TODO"
+          href: "https://www.desmos.com/calculator/jeloxwztcy?lang=zh-CN",
+          linkLabel: "物理 / 数学模型 1"
         },
         {
           title: "圆锥曲线切线",
           description: "圆锥曲线切线参数方程推导与 Desmos 可视化作品。",
           tags: ["Desmos", "Conic Section", "Visualization"],
-          linkLabel: "Link TODO"
+          linkLabel: "圆锥曲线切线"
         },
         {
           title: "模型作品 2",
           description: "用于补充后续统计建模、数据分析或 ODE 探索成果。",
           tags: ["Modeling", "TODO"],
-          linkLabel: "Link TODO"
+          linkLabel: "模型作品 2"
         }
       ]
     },

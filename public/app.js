@@ -841,25 +841,31 @@ function renderWorkCards(works, container) {
   const items = Array.isArray(works) ? works : [];
   if (items.length === 0) return;
 
-  const grid = document.createElement("div");
-  grid.className = "work-grid";
-  grid.append(...items.map((work) => {
-    const item = document.createElement("article");
-    item.className = "work-card";
+  const list = document.createElement("ul");
+  list.className = "work-link-list";
+  list.append(...items.map((work) => {
+    const item = document.createElement("li");
+    const label = work.linkLabel || work.title || "作品链接";
 
-    const title = document.createElement("h3");
-    title.textContent = work.title || "";
+    if (work.href) {
+      const link = document.createElement("a");
+      link.href = work.href;
+      link.textContent = label;
+      link.target = link.href.startsWith("http") ? "_blank" : "";
+      link.rel = link.target ? "noreferrer" : "";
+      item.append(link);
+    } else {
+      const placeholder = document.createElement("span");
+      placeholder.className = "work-link-placeholder";
+      placeholder.textContent = label;
+      placeholder.title = "链接待补充";
+      item.append(placeholder);
+    }
 
-    const description = document.createElement("p");
-    description.textContent = work.description || "";
-
-    item.append(title, description);
-    appendTagRow(item, work.tags);
-    item.append(createDetailLink(work));
     return item;
   }));
 
-  container.append(grid);
+  container.append(list);
 }
 
 function renderContactGrid(contacts, container) {
