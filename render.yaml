@@ -14,7 +14,7 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: PUBLIC_SITE_URL
-        sync: false
+        value: "https://huangwenhao.com"
       - key: REDIS_URL
         value: "https://saving-kangaroo-103530.upstash.io"
       - key: REDIS_TOKEN
