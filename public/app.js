@@ -11,7 +11,7 @@ const state = {
   guestbookMode: "server",
   guestbookBackend: "server",
   guestbookDurable: false,
-  guestbookAdminPassword: localStorage.getItem("guestbook-admin-password") || "",
+  guestbookAdminPassword: "",
   stageGrains: [],
   stageFrameAt: 0,
   scrollingUntil: 0,
@@ -1031,32 +1031,7 @@ function renderGuestbookModule(module) {
   const panelTitle = document.createElement("h3");
   panelTitle.textContent = "访客留言";
 
-  const admin = document.createElement("details");
-  admin.className = "guestbook-admin";
-
-  const summaryAdmin = document.createElement("summary");
-  summaryAdmin.textContent = "管理员";
-
-  const adminRow = document.createElement("div");
-  adminRow.className = "guestbook-admin-row";
-
-  const passwordInput = document.createElement("input");
-  passwordInput.type = "password";
-  passwordInput.autocomplete = "current-password";
-  passwordInput.placeholder = "删除密码";
-  passwordInput.value = state.guestbookAdminPassword;
-
-  const saveAdmin = document.createElement("button");
-  saveAdmin.type = "button";
-  saveAdmin.textContent = state.guestbookAdminPassword ? "已启用" : "启用删除";
-
-  const clearAdmin = document.createElement("button");
-  clearAdmin.type = "button";
-  clearAdmin.textContent = "退出";
-
-  adminRow.append(passwordInput, saveAdmin, clearAdmin);
-  admin.append(summaryAdmin, adminRow);
-  panelHeader.append(panelTitle, admin);
+  panelHeader.append(panelTitle);
 
   const list = document.createElement("div");
   list.className = "guestbook-list";
@@ -1075,29 +1050,6 @@ function renderGuestbookModule(module) {
       status,
       list
     });
-  });
-
-  saveAdmin.addEventListener("click", () => {
-    state.guestbookAdminPassword = passwordInput.value.trim();
-    if (state.guestbookAdminPassword) {
-      localStorage.setItem("guestbook-admin-password", state.guestbookAdminPassword);
-      saveAdmin.textContent = "已启用";
-      setGuestbookStatus(status, "管理员删除已启用。");
-    } else {
-      localStorage.removeItem("guestbook-admin-password");
-      saveAdmin.textContent = "启用删除";
-      setGuestbookStatus(status, "请输入管理员密码。", true);
-    }
-    renderGuestbookMessages(list, status);
-  });
-
-  clearAdmin.addEventListener("click", () => {
-    state.guestbookAdminPassword = "";
-    passwordInput.value = "";
-    localStorage.removeItem("guestbook-admin-password");
-    saveAdmin.textContent = "启用删除";
-    setGuestbookStatus(status, "已退出管理员删除模式。");
-    renderGuestbookMessages(list, status);
   });
 
   loadGuestbookMessages(list, status);
@@ -1246,17 +1198,6 @@ function renderGuestbookMessages(list, status) {
     time.textContent = formatGuestbookDate(message.createdAt);
 
     header.append(author, time);
-
-    if (state.guestbookAdminPassword) {
-      const deleteButton = document.createElement("button");
-      deleteButton.type = "button";
-      deleteButton.className = "guestbook-delete";
-      deleteButton.textContent = "删除";
-      deleteButton.addEventListener("click", () => {
-        deleteGuestbookMessage(message.id, list, status);
-      });
-      header.append(deleteButton);
-    }
 
     const body = document.createElement("p");
     body.textContent = message.content || "";
@@ -1813,9 +1754,9 @@ function createGuestbookModule() {
     id: "guestbook",
     eyebrow: "Guestbook",
     title: "留言板",
-    summary: "访客可以在这里留下想法、建议或合作意向。管理员输入密码后可以删除留言。",
+    summary: "访客可以在这里留下想法、建议或合作意向。留言会公开展示。",
     accent: "#22d3ee",
-    chips: ["访客留言", "公开互动", "管理员删除"],
+    chips: ["访客留言", "公开互动", "建议反馈"],
     sections: []
   };
 }

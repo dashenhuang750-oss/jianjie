@@ -314,17 +314,11 @@ function createLocalAnswer(message, profile) {
     }
   }
 
-  const voice = profile.voice && Array.isArray(profile.voice.sampleLines)
-    ? profile.voice.sampleLines[0]
-    : "";
   const matched = best && best.answer
     ? best.answer
     : `${profile.summary || "目前资料还不完整。"} 这个问题我还没有足够资料回答得很具体，但我会更倾向于先说清楚真实情况，再给出可以继续沟通的方向。`;
 
-  return [
-    matched,
-    voice ? `换成我的说法就是：${voice}` : ""
-  ].filter(Boolean).join("\n\n");
+  return matched;
 }
 
 function publicProfile(profile) {

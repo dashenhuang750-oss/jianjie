@@ -299,7 +299,7 @@ module.exports = {
       id: "guestbook",
       eyebrow: "Guestbook",
       title: "留言板",
-      summary: "访客可以在这里留下建议、想法或合作意向。留言会公开展示，管理员输入密码后可以删除。",
+      summary: "访客可以在这里留下建议、想法或合作意向。留言会公开展示。",
       accent: "#173c34",
       chips: ["公开留言", "建议反馈", "合作意向"]
     },
