@@ -162,30 +162,20 @@ module.exports = {
             "进一步理解特征时间等物理概念。"
           ],
           tags: ["Desmos", "ODE", "Conic Section", "Visualization"],
-          linkLabel: "链接待补充"
-        }
-      ],
-      works: [
-        {
-          title: "物理 / 数学模型 1",
-          description: "用于沉淀物理或数学建模探索的作品入口。",
-          tags: ["Desmos", "Model"],
-          href: "https://www.desmos.com/calculator/jeloxwztcy?lang=zh-CN",
-          linkLabel: "物理 / 数学模型 1"
-        },
-        {
-          title: "圆锥曲线切线",
-          description: "圆锥曲线切线参数方程推导与 Desmos 可视化作品。",
-          tags: ["Desmos", "Conic Section", "Visualization"],
-          href: "https://www.desmos.com/calculator/xigzwsvcbg?lang=zh-CN",
-          linkLabel: "圆锥曲线切线"
-        },
-        {
-          title: "模型作品 2",
-          description: "用于补充后续统计建模、数据分析或 ODE 探索成果。",
-          tags: ["Desmos", "Modeling"],
-          href: "https://www.desmos.com/calculator/m1r2swmjut?lang=zh-CN",
-          linkLabel: "模型作品 2"
+          links: [
+            {
+              href: "https://www.desmos.com/calculator/jeloxwztcy?lang=zh-CN",
+              label: "物理 / 数学模型 1"
+            },
+            {
+              href: "https://www.desmos.com/calculator/xigzwsvcbg?lang=zh-CN",
+              label: "圆锥曲线切线"
+            },
+            {
+              href: "https://www.desmos.com/calculator/m1r2swmjut?lang=zh-CN",
+              label: "模型作品 2"
+            }
+          ]
         }
       ]
     },

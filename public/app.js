@@ -722,8 +722,8 @@ function renderProjectCards(projects, container) {
       titleGroup.append(role);
     }
 
-    const link = createDetailLink(project);
-    header.append(titleGroup, link);
+    const actions = createProjectActions(project);
+    header.append(titleGroup, actions);
 
     const description = document.createElement("p");
     description.className = "project-description";
@@ -870,6 +870,24 @@ function renderWorkCards(works, container) {
   }));
 
   container.append(heading, list);
+}
+
+function createProjectActions(project) {
+  const links = Array.isArray(project.links)
+    ? project.links.filter((link) => link && link.href)
+    : [];
+
+  if (links.length > 0) {
+    const group = document.createElement("div");
+    group.className = "project-link-group";
+    group.append(...links.map((linkItem) => createDetailLink({
+      href: linkItem.href,
+      linkLabel: linkItem.label || linkItem.title || "查看作品"
+    })));
+    return group;
+  }
+
+  return createDetailLink(project);
 }
 
 function renderContactGrid(contacts, container) {
