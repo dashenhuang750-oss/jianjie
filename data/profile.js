@@ -10,8 +10,8 @@ module.exports = {
   summary: "西北农林科技大学本科在读，关注数学建模、统计建模、物理建模、数据分析与可解释表达。长期保持对数学与物理问题的兴趣，也在竞赛、可视化探索和公共服务中持续训练问题拆解、团队协同与结果交付能力。",
   greeting: "你好，我是黄文浩的 AI 分身。你可以问我关于教育背景、建模经历、竞赛荣誉、能力优势、合作交流或最近在做什么的问题。",
   guestbook: {
-    enabled: false,
-    adminPassword: "1234"
+    enabled: true,
+    adminPassword: ""
   },
   links: [
     {
@@ -294,6 +294,14 @@ module.exports = {
           body: "目标、时间节点、已有资料、预期产出和你希望我承担的部分。信息越具体，沟通越高效。"
         }
       ]
+    },
+    {
+      id: "guestbook",
+      eyebrow: "Guestbook",
+      title: "留言板",
+      summary: "访客可以在这里留下建议、想法或合作意向。留言会公开展示，管理员输入密码后可以删除。",
+      accent: "#173c34",
+      chips: ["公开留言", "建议反馈", "合作意向"]
     },
     {
       id: "assistant",
