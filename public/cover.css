@@ -137,40 +137,45 @@ body {
 
 .hero-copy {
   justify-items: center;
-  gap: 16px;
+  gap: 14px;
   width: min(860px, calc(100vw - 96px));
-  margin-top: clamp(110px, 20vh, 190px);
+  margin-top: clamp(148px, 26vh, 240px);
   color: var(--cover-heading);
   text-align: center;
 }
 
 .hero-kicker {
-  color: var(--cover-teal);
+  color: rgba(12, 92, 84, 0.92);
   font-size: clamp(12px, 1.15vw, 15px);
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-weight: 750;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  text-shadow: 0 1px 18px rgba(255, 255, 255, 0.5);
 }
 
 .hero-title {
-  color: var(--cover-heading);
+  color: #1b1230;
   font-family: var(--cover-font);
-  font-size: clamp(82px, 11vw, 146px);
+  font-size: clamp(48px, 6.2vw, 88px);
   font-style: normal;
-  font-weight: 850;
-  line-height: 0.9;
-  letter-spacing: 0;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
+  font-weight: 820;
+  line-height: 0.96;
+  letter-spacing: 0.03em;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.46),
+    0 16px 38px rgba(27, 18, 48, 0.2);
 }
 
 .hero-line {
   max-width: 620px;
   margin-top: 2px;
-  color: rgba(248, 250, 252, 0.88);
-  font-size: clamp(18px, 1.6vw, 24px);
-  font-weight: 650;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: clamp(17px, 1.42vw, 22px);
+  font-weight: 700;
   line-height: 1.6;
-  text-shadow: 0 2px 18px rgba(15, 23, 42, 0.42);
+  text-shadow:
+    0 2px 16px rgba(15, 23, 42, 0.54),
+    0 0 1px rgba(15, 23, 42, 0.68);
 }
 
 .enter-button {
@@ -222,13 +227,13 @@ body {
 
   .hero-copy {
     width: calc(100vw - 56px);
-    margin-top: 86px;
+    margin-top: 112px;
     text-align: left;
     justify-items: start;
   }
 
   .hero-title {
-    font-size: clamp(58px, 20vw, 106px);
+    font-size: clamp(42px, 13vw, 68px);
   }
 
   .hero-line {
@@ -255,7 +260,7 @@ body {
   }
 
   .hero-title {
-    font-size: clamp(54px, 21vw, 86px);
+    font-size: clamp(38px, 14vw, 58px);
   }
 
   .enter-button {
