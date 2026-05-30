@@ -1181,17 +1181,7 @@ function updateGuestbookPersistence(data) {
 }
 
 function createGuestbookStorageMessage(prefix = "") {
-  const lead = prefix ? `${prefix} ` : "";
-  if (state.guestbookDurable) {
-    return `${lead}留言已连接云端存储，重新部署后也会保留。`;
-  }
-  if (state.guestbookBackend === "file") {
-    return `${lead}当前保存到服务器运行数据文件；配置 Redis 后可跨部署长期保留。`;
-  }
-  if (state.guestbookBackend === "memory") {
-    return `${lead}当前为运行内临时保存，服务重启后可能清空。`;
-  }
-  return `${lead}留言已连接服务器。`;
+  return prefix || "";
 }
 
 async function submitGuestbookMessage({ name, content, form, contentInput, status, list, messageCount }) {
