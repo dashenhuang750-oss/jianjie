@@ -305,7 +305,7 @@
       .hero-title {
         margin: 0;
         font-family: var(--serif);
-        font-size: clamp(68px, 12vw, 156px);
+        font-size: clamp(30px, 3.9vw, 56px);
         font-style: italic;
         font-weight: 400;
         line-height: 0.88;
@@ -468,7 +468,7 @@
         }
 
         .hero-title {
-          font-size: clamp(74px, 22vw, 112px);
+          font-size: clamp(28px, 9.4vw, 44px);
         }
 
         .hero-line {
@@ -506,7 +506,7 @@
         }
 
         .hero-title {
-          font-size: clamp(62px, 23vw, 92px);
+          font-size: clamp(26px, 10vw, 40px);
         }
 
         .edge-caption {
@@ -550,9 +550,9 @@
         </a>
 
         <nav class="nav-menu" aria-label="主导航">
-          <a href="/app" data-enter>Projects</a>
-          <a href="/app" data-enter>Skills</a>
-          <a href="/app" data-enter>Contact</a>
+          <a href="/app?module=projects" data-enter>Projects</a>
+          <a href="/app?module=skills" data-enter>Skills</a>
+          <a href="/app?module=contact" data-enter>Contact</a>
         </nav>
 
         <div class="nav-actions">
@@ -665,9 +665,15 @@
         const enter = (event) => {
           if (event) event.preventDefault();
           if (document.body.classList.contains("is-exiting")) return;
+          const target = event && event.currentTarget && event.currentTarget !== document
+            ? event.currentTarget
+            : null;
+          const nextUrl = target && target.getAttribute("href")
+            ? target.getAttribute("href")
+            : "/app";
           document.body.classList.add("is-exiting");
           window.setTimeout(() => {
-            window.location.href = "/app";
+            window.location.href = nextUrl;
           }, 520);
         };
 

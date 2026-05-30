@@ -82,6 +82,7 @@ async function init() {
     renderProfile(state.profile);
     renderModules();
     setupStageMap();
+    openInitialModuleFromRoute();
   } finally {
     revealApp();
   }
@@ -164,6 +165,16 @@ function bindChatEvents() {
       sendCurrentMessage();
     }
   });
+}
+
+function openInitialModuleFromRoute() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedModule = params.get("module") || window.location.hash.replace(/^#/, "");
+  if (!requestedModule) return;
+
+  const normalizedModule = requestedModule.trim().toLowerCase();
+  const module = state.modules.find((item) => item.id === normalizedModule);
+  if (module) openModule(module.id);
 }
 
 function renderProfile(profile) {
