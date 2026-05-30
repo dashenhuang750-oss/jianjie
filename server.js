@@ -640,7 +640,7 @@ function sendHtml(res, status, content, requestPath = "") {
 function injectAssetVersion(html) {
   const assetVersion = createAssetVersion();
   return html.replace(
-    /\b(href|src)="(\/(?:styles\.css|app\.js))(?:\?v=[^"]*)?"/g,
+    /\b(href|src)="(\/(?:cover\.css|styles\.css|app\.js))(?:\?v=[^"]*)?"/g,
     (match, attr, assetPath) => `${attr}="${assetPath}?v=${assetVersion}"`
   );
 }
@@ -676,7 +676,7 @@ function createAssetVersion() {
     return deployVersion.slice(0, 12);
   }
 
-  const assetFiles = ["index.html", "styles.css", "app.js"];
+  const assetFiles = ["cover.html", "cover.css", "index.html", "styles.css", "app.js"];
   const latestMtime = assetFiles.reduce((latest, fileName) => {
     try {
       const filePath = path.join(PUBLIC_DIR, fileName);
