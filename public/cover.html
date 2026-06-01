@@ -605,6 +605,30 @@
           root.style.setProperty("--py", `${y.toFixed(1)}px`);
         };
 
+        const trackVisit = async () => {
+          try {
+            const key = "profile-visitor-id";
+            let visitorId = localStorage.getItem(key);
+            if (!visitorId) {
+              visitorId = window.crypto && crypto.randomUUID
+                ? crypto.randomUUID()
+                : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+              localStorage.setItem(key, visitorId);
+            }
+
+            await fetch("/api/analytics/visit", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                visitorId,
+                page: `${window.location.pathname}${window.location.search}`
+              })
+            });
+          } catch (error) {
+            // Analytics should never block the cover page.
+          }
+        };
+
         const resize = () => {
           const ratio = Math.min(window.devicePixelRatio || 1, 1.6);
           const rect = canvas.getBoundingClientRect();
@@ -691,6 +715,7 @@
 
         resize();
         setPointer(window.innerWidth / 2, window.innerHeight / 2);
+        trackVisit();
         draw();
         window.addEventListener("resize", resize, { passive: true });
       })();

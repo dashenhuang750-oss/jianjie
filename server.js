@@ -16,9 +16,11 @@ const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const PUBLIC_SITE_URL = cleanPublicUrl(process.env.PUBLIC_SITE_URL || "");
 const LEGACY_GUESTBOOK_PATH = path.join(ROOT, "data", "guestbook.json");
 const GUESTBOOK_PATH = resolveGuestbookPath();
+const ANALYTICS_PATH = resolveDataFilePath("analytics.json");
 const JSON_LIMIT_BYTES = 64 * 1024;
 const RATE_LIMITS = new Map();
 let guestbookMemory = [];
+let analyticsMemory = createEmptyAnalytics();
 
 const REDIS_URL = (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || "").replace(/\/$/, "");
 const REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
@@ -59,8 +61,20 @@ const server = http.createServer(async (req, res) => {
         guestbookPersisted: isGuestbookDurable() || canWriteGuestbook(),
         guestbookBackend: getGuestbookBackend(),
         guestbookPersistentAcrossDeploys: isGuestbookDurable(),
-        guestbookCloudConfigured: hasRedisGuestbook()
+        guestbookCloudConfigured: hasRedisGuestbook(),
+        analyticsPersisted: canWriteAnalytics(),
+        analyticsPath: ANALYTICS_PATH,
+        analyticsPersistentAcrossDeploys: isAnalyticsDurable()
       });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/analytics") {
+      return handleAnalyticsSummary(res);
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/analytics/visit") {
+      if (isRateLimited(req, res, "analytics:visit", 30, 60 * 1000)) return;
+      return await handleAnalyticsVisit(req, res);
     }
 
     if (req.method === "POST" && url.pathname === "/api/chat") {
@@ -319,6 +333,40 @@ function createLocalAnswer(message, profile) {
   return matched;
 }
 
+function handleAnalyticsSummary(res) {
+  const analytics = loadAnalytics();
+  sendJson(res, 200, createAnalyticsSummary(analytics));
+}
+
+async function handleAnalyticsVisit(req, res) {
+  const body = await readJson(req, JSON_LIMIT_BYTES).catch(() => ({}));
+  const visitorId = cleanText(body.visitorId || "").slice(0, 120);
+  const page = cleanText(body.page || "").slice(0, 160) || "/";
+  const analytics = loadAnalytics();
+  const now = new Date();
+  const day = formatAnalyticsDay(now);
+  const visitorKey = hashAnalyticsVisitor(visitorId || getClientKey(req));
+  const visitor = analytics.visitors[visitorKey] || {
+    firstSeenAt: now.toISOString(),
+    lastSeenAt: "",
+    views: 0
+  };
+
+  analytics.totalViews += 1;
+  analytics.updatedAt = now.toISOString();
+  analytics.daily[day] = analytics.daily[day] || { views: 0, visitors: {} };
+  analytics.daily[day].views += 1;
+  analytics.daily[day].visitors[visitorKey] = true;
+  analytics.pages[page] = (analytics.pages[page] || 0) + 1;
+
+  visitor.lastSeenAt = now.toISOString();
+  visitor.views += 1;
+  analytics.visitors[visitorKey] = visitor;
+
+  saveAnalytics(analytics);
+  sendJson(res, 200, createAnalyticsSummary(analytics));
+}
+
 function publicProfile(profile) {
   const clone = JSON.parse(JSON.stringify(profile));
   delete clone.knowledgeBase;
@@ -338,6 +386,88 @@ function loadProfile() {
 
   const raw = fs.readFileSync(LEGACY_PROFILE_PATH, "utf8");
   return JSON.parse(raw);
+}
+
+function createEmptyAnalytics() {
+  return {
+    totalViews: 0,
+    visitors: {},
+    daily: {},
+    pages: {},
+    updatedAt: ""
+  };
+}
+
+function loadAnalytics() {
+  try {
+    if (!fs.existsSync(ANALYTICS_PATH)) {
+      return analyticsMemory;
+    }
+
+    const data = JSON.parse(fs.readFileSync(ANALYTICS_PATH, "utf8"));
+    analyticsMemory = normalizeAnalytics(data);
+    return analyticsMemory;
+  } catch (error) {
+    return analyticsMemory;
+  }
+}
+
+function saveAnalytics(analytics) {
+  analyticsMemory = pruneAnalytics(normalizeAnalytics(analytics));
+
+  try {
+    fs.mkdirSync(path.dirname(ANALYTICS_PATH), { recursive: true });
+    fs.writeFileSync(ANALYTICS_PATH, JSON.stringify(analyticsMemory, null, 2), "utf8");
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function normalizeAnalytics(data) {
+  return {
+    totalViews: Number.isFinite(data && data.totalViews) ? Math.max(0, Math.floor(data.totalViews)) : 0,
+    visitors: data && data.visitors && typeof data.visitors === "object" ? data.visitors : {},
+    daily: data && data.daily && typeof data.daily === "object" ? data.daily : {},
+    pages: data && data.pages && typeof data.pages === "object" ? data.pages : {},
+    updatedAt: data && typeof data.updatedAt === "string" ? data.updatedAt : ""
+  };
+}
+
+function pruneAnalytics(analytics) {
+  const days = Object.keys(analytics.daily).sort();
+  const keepDays = new Set(days.slice(-90));
+  analytics.daily = days.reduce((result, day) => {
+    if (keepDays.has(day)) result[day] = analytics.daily[day];
+    return result;
+  }, {});
+
+  return analytics;
+}
+
+function createAnalyticsSummary(analytics) {
+  const today = formatAnalyticsDay(new Date());
+  const todayData = analytics.daily[today] || { views: 0, visitors: {} };
+  return {
+    totalViews: analytics.totalViews,
+    uniqueVisitors: Object.keys(analytics.visitors).length,
+    todayViews: todayData.views || 0,
+    todayVisitors: Object.keys(todayData.visitors || {}).length,
+    updatedAt: analytics.updatedAt
+  };
+}
+
+function hashAnalyticsVisitor(value) {
+  const salt = process.env.ANALYTICS_SALT || "personal-profile-ai";
+  return crypto
+    .createHash("sha256")
+    .update(`${salt}:${value}`)
+    .digest("hex")
+    .slice(0, 32);
+}
+
+function formatAnalyticsDay(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 async function loadGuestbook() {
@@ -512,6 +642,21 @@ function canWriteGuestbook() {
   } catch (error) {
     return false;
   }
+}
+
+function canWriteAnalytics() {
+  try {
+    fs.mkdirSync(path.dirname(ANALYTICS_PATH), { recursive: true });
+    fs.accessSync(path.dirname(ANALYTICS_PATH), fs.constants.W_OK);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function isAnalyticsDurable() {
+  if (!process.env.RENDER) return false;
+  return path.resolve(ANALYTICS_PATH).startsWith(path.resolve("/var/data"));
 }
 
 function isGuestbookMessage(message) {
@@ -714,6 +859,19 @@ function resolveGuestbookPath() {
   }
 
   return path.join(ROOT, ".guestbook", "guestbook.json");
+}
+
+function resolveDataFilePath(fileName) {
+  if (process.env.DATA_DIR) {
+    return path.resolve(ROOT, process.env.DATA_DIR, fileName);
+  }
+
+  const renderDiskPath = "/var/data";
+  if (process.env.RENDER && fs.existsSync(renderDiskPath)) {
+    return path.join(renderDiskPath, fileName);
+  }
+
+  return path.join(ROOT, ".analytics", fileName);
 }
 
 function loadGuestbookSeed() {

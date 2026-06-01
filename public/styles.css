@@ -822,8 +822,20 @@ body.is-booting .signature-canvas {
 .work-grid,
 .contact-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-4);
+}
+
+.fact-strip {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.stat-grid,
+.media-grid,
+.feature-card-grid,
+.skill-grid,
+.work-grid,
+.contact-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .fact {

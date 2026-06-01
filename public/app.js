@@ -12,6 +12,7 @@ const state = {
   guestbookBackend: "server",
   guestbookDurable: false,
   guestbookAdminPassword: "",
+  analytics: null,
   stageGrains: [],
   stageFrameAt: 0,
   scrollingUntil: 0,
@@ -82,6 +83,7 @@ async function init() {
     renderProfile(state.profile);
     renderModules();
     setupStageMap();
+    trackVisit();
     openInitialModuleFromRoute();
   } finally {
     revealApp();
@@ -240,6 +242,72 @@ function renderProfile(profile) {
     });
     return button;
   }));
+
+  renderAnalyticsFact();
+}
+
+async function trackVisit() {
+  try {
+    const visitorId = getAnalyticsVisitorId();
+    const response = await fetch("/api/analytics/visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        visitorId,
+        page: `${window.location.pathname}${window.location.search}`
+      })
+    });
+
+    if (!response.ok) return;
+    state.analytics = await response.json();
+    renderAnalyticsFact();
+  } catch (error) {
+    try {
+      const response = await fetch("/api/analytics", { cache: "no-store" });
+      if (!response.ok) return;
+      state.analytics = await response.json();
+      renderAnalyticsFact();
+    } catch (fallbackError) {
+      // Analytics is optional; the profile should stay usable if storage is unavailable.
+    }
+  }
+}
+
+function getAnalyticsVisitorId() {
+  const key = "profile-visitor-id";
+  const existing = localStorage.getItem(key);
+  if (existing) return existing;
+
+  const id = window.crypto && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  localStorage.setItem(key, id);
+  return id;
+}
+
+function renderAnalyticsFact() {
+  if (!elements.factGrid || !state.analytics) return;
+
+  let item = elements.factGrid.querySelector("[data-analytics-fact]");
+  if (!item) {
+    item = document.createElement("article");
+    item.className = "fact analytics-fact";
+    item.dataset.analyticsFact = "true";
+
+    const label = document.createElement("strong");
+    label.textContent = "访问统计";
+
+    const value = document.createElement("span");
+    item.append(label, value);
+    elements.factGrid.append(item);
+  }
+
+  const value = item.querySelector("span");
+  value.textContent = `总浏览 ${formatCount(state.analytics.totalViews)} 次 · 访客 ${formatCount(state.analytics.uniqueVisitors)} 人 · 今日 ${formatCount(state.analytics.todayViews)} 次`;
+}
+
+function formatCount(value) {
+  return Number(value || 0).toLocaleString("zh-CN");
 }
 
 function createNameLine(text, className) {

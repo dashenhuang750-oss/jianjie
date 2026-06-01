@@ -5,6 +5,7 @@ Thumbs.db
 *.log
 .edge-profile/
 .edge-check/
+.analytics/
 .railway/
 .guestbook/
 data/guestbook.json
