@@ -293,6 +293,9 @@ function renderAnalyticsMeter() {
     item = document.createElement("span");
     item.className = "analytics-meter";
     item.dataset.analyticsMeter = "true";
+  }
+
+  if (item.parentElement !== document.body) {
     document.body.append(item);
   }
 

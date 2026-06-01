@@ -880,8 +880,13 @@ body.is-booting .signature-canvas {
   font-size: 14px;
 }
 
+.link-list span,
 .link-list a {
   color: var(--color-heading);
+  opacity: 1;
+}
+
+.link-list a {
   text-decoration: none;
   border-bottom: 1px solid rgba(29, 78, 216, 0.22);
 }
@@ -895,7 +900,7 @@ body.is-booting .signature-canvas {
   position: fixed;
   right: max(14px, env(safe-area-inset-right));
   bottom: max(12px, env(safe-area-inset-bottom));
-  z-index: 12;
+  z-index: 60;
   color: color-mix(in srgb, var(--color-muted), transparent 36%);
   font-size: 12px;
   line-height: 1;
