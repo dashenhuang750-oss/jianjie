@@ -2,19 +2,13 @@ services:
   - type: web
     name: personal-profile-ai
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install
     startCommand: node server.js
     autoDeploy: true
-    disk:
-      name: profile-data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: OPENAI_MODEL
         value: gpt-4.1-mini
-      - key: DATA_DIR
-        value: /var/data
       - key: GUESTBOOK_ADMIN_PASSWORD
         sync: false
       - key: OPENAI_API_KEY
@@ -27,3 +21,5 @@ services:
         sync: false
       - key: GUESTBOOK_REDIS_KEY
         value: guestbook:messages
+      - key: ANALYTICS_REDIS_KEY
+        value: analytics:visits

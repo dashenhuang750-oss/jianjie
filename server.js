@@ -26,7 +26,12 @@ const REDIS_URL = (process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL |
 const REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "";
 const GUESTBOOK_REDIS_KEY = process.env.GUESTBOOK_REDIS_KEY || "guestbook:messages";
 const GUESTBOOK_REDIS_LIST_KEY = process.env.GUESTBOOK_REDIS_LIST_KEY || `${GUESTBOOK_REDIS_KEY}:list`;
+const ANALYTICS_REDIS_KEY = process.env.ANALYTICS_REDIS_KEY || "analytics:visits";
 let guestbookStorage = {
+  backend: REDIS_URL && REDIS_TOKEN ? "redis" : "file",
+  durable: Boolean(REDIS_URL && REDIS_TOKEN)
+};
+let analyticsStorage = {
   backend: REDIS_URL && REDIS_TOKEN ? "redis" : "file",
   durable: Boolean(REDIS_URL && REDIS_TOKEN)
 };
@@ -62,7 +67,8 @@ const server = http.createServer(async (req, res) => {
         guestbookBackend: getGuestbookBackend(),
         guestbookPersistentAcrossDeploys: isGuestbookDurable(),
         guestbookCloudConfigured: hasRedisGuestbook(),
-        analyticsPersisted: canWriteAnalytics(),
+        analyticsBackend: getAnalyticsBackend(),
+        analyticsPersisted: isAnalyticsDurable() || canWriteAnalytics(),
         analyticsPath: ANALYTICS_PATH,
         analyticsPersistentAcrossDeploys: isAnalyticsDurable()
       });
@@ -333,8 +339,8 @@ function createLocalAnswer(message, profile) {
   return matched;
 }
 
-function handleAnalyticsSummary(res) {
-  const analytics = loadAnalytics();
+async function handleAnalyticsSummary(res) {
+  const analytics = await loadAnalytics();
   sendJson(res, 200, createAnalyticsSummary(analytics));
 }
 
@@ -342,7 +348,7 @@ async function handleAnalyticsVisit(req, res) {
   const body = await readJson(req, JSON_LIMIT_BYTES).catch(() => ({}));
   const visitorId = cleanText(body.visitorId || "").slice(0, 120);
   const page = cleanText(body.page || "").slice(0, 160) || "/";
-  const analytics = loadAnalytics();
+  const analytics = await loadAnalytics();
   const now = new Date();
   const day = formatAnalyticsDay(now);
   const visitorKey = hashAnalyticsVisitor(visitorId || getClientKey(req));
@@ -363,7 +369,7 @@ async function handleAnalyticsVisit(req, res) {
   visitor.views += 1;
   analytics.visitors[visitorKey] = visitor;
 
-  saveAnalytics(analytics);
+  await saveAnalytics(analytics);
   sendJson(res, 200, createAnalyticsSummary(analytics));
 }
 
@@ -398,28 +404,74 @@ function createEmptyAnalytics() {
   };
 }
 
-function loadAnalytics() {
+async function loadAnalytics() {
+  const redisAnalytics = await loadAnalyticsFromRedis();
+  if (redisAnalytics !== null) {
+    analyticsMemory = redisAnalytics;
+    setAnalyticsStorageStatus("redis", true);
+    return redisAnalytics;
+  }
+
   try {
     if (!fs.existsSync(ANALYTICS_PATH)) {
+      setAnalyticsStorageStatus("memory", false);
       return analyticsMemory;
     }
 
     const data = JSON.parse(fs.readFileSync(ANALYTICS_PATH, "utf8"));
     analyticsMemory = normalizeAnalytics(data);
+    setAnalyticsStorageStatus("file", isAnalyticsDiskPath());
     return analyticsMemory;
   } catch (error) {
+    setAnalyticsStorageStatus("memory", false);
     return analyticsMemory;
   }
 }
 
-function saveAnalytics(analytics) {
+async function saveAnalytics(analytics) {
   analyticsMemory = pruneAnalytics(normalizeAnalytics(analytics));
 
+  if (hasRedisAnalytics()) {
+    const redisOk = await saveAnalyticsToRedis(analyticsMemory);
+    if (redisOk) {
+      saveAnalyticsToFile(analyticsMemory);
+      setAnalyticsStorageStatus("redis", true);
+      return true;
+    }
+  }
+
+  const fileOk = saveAnalyticsToFile(analyticsMemory);
+  setAnalyticsStorageStatus(fileOk ? "file" : "memory", fileOk && isAnalyticsDiskPath());
+  return fileOk;
+}
+
+function saveAnalyticsToFile(analytics) {
   try {
     fs.mkdirSync(path.dirname(ANALYTICS_PATH), { recursive: true });
-    fs.writeFileSync(ANALYTICS_PATH, JSON.stringify(analyticsMemory, null, 2), "utf8");
+    fs.writeFileSync(ANALYTICS_PATH, JSON.stringify(analytics, null, 2), "utf8");
     return true;
   } catch (error) {
+    return false;
+  }
+}
+
+async function loadAnalyticsFromRedis() {
+  if (!hasRedisAnalytics()) return null;
+  try {
+    const data = await redisCommand(["GET", ANALYTICS_REDIS_KEY]);
+    if (!data.result) return createEmptyAnalytics();
+    return normalizeAnalytics(JSON.parse(data.result));
+  } catch {
+    return null;
+  }
+}
+
+async function saveAnalyticsToRedis(analytics) {
+  if (!hasRedisAnalytics()) return false;
+  try {
+    const data = await redisCommand(["SET", ANALYTICS_REDIS_KEY, JSON.stringify(analytics)]);
+    return Boolean(data.result);
+  } catch {
     return false;
   }
 }
@@ -617,6 +669,10 @@ function hasRedisGuestbook() {
   return Boolean(REDIS_URL && REDIS_TOKEN);
 }
 
+function hasRedisAnalytics() {
+  return Boolean(REDIS_URL && REDIS_TOKEN);
+}
+
 function createGuestbookSaveResult(ok, backend, durable) {
   setGuestbookStorageStatus(backend, durable);
   return { ok, backend, durable };
@@ -632,6 +688,14 @@ function getGuestbookBackend() {
 
 function isGuestbookDurable() {
   return Boolean(guestbookStorage.durable);
+}
+
+function setAnalyticsStorageStatus(backend, durable) {
+  analyticsStorage = { backend, durable };
+}
+
+function getAnalyticsBackend() {
+  return analyticsStorage.backend || (hasRedisAnalytics() ? "redis" : "file");
 }
 
 function canWriteGuestbook() {
@@ -655,6 +719,10 @@ function canWriteAnalytics() {
 }
 
 function isAnalyticsDurable() {
+  return Boolean(analyticsStorage.durable) || isAnalyticsDiskPath();
+}
+
+function isAnalyticsDiskPath() {
   if (!process.env.RENDER) return false;
   return path.resolve(ANALYTICS_PATH).startsWith(path.resolve("/var/data"));
 }
