@@ -901,11 +901,19 @@ body.is-booting .signature-canvas {
   right: max(14px, env(safe-area-inset-right));
   bottom: max(12px, env(safe-area-inset-bottom));
   z-index: 60;
-  color: color-mix(in srgb, var(--color-muted), transparent 36%);
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--color-heading), transparent 16%);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 22px rgba(8, 12, 15, 0.1);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
   font-size: 12px;
-  line-height: 1;
+  font-weight: 650;
+  line-height: 1.2;
   white-space: nowrap;
-  opacity: 0.62;
+  opacity: 0.82;
   pointer-events: none;
 }
 
