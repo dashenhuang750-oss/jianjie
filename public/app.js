@@ -286,17 +286,17 @@ function getAnalyticsVisitorId() {
 }
 
 function renderAnalyticsMeter() {
-  if (!elements.linkList || !state.analytics) return;
+  if (!state.analytics) return;
 
-  let item = elements.linkList.querySelector("[data-analytics-meter]");
+  let item = document.querySelector("[data-analytics-meter]");
   if (!item) {
     item = document.createElement("span");
     item.className = "analytics-meter";
     item.dataset.analyticsMeter = "true";
-    elements.linkList.append(item);
+    document.body.append(item);
   }
 
-  item.textContent = `浏览 ${formatCount(state.analytics.totalViews)} · 访客 ${formatCount(state.analytics.uniqueVisitors)}`;
+  item.textContent = `浏览 ${formatCount(state.analytics.totalViews)}`;
 }
 
 function formatCount(value) {

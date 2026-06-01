@@ -876,7 +876,7 @@ body.is-booting .signature-canvas {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3) var(--space-5);
-  color: var(--color-muted);
+  color: var(--color-heading);
   font-size: 14px;
 }
 
@@ -892,11 +892,16 @@ body.is-booting .signature-canvas {
 }
 
 .analytics-meter {
-  margin-left: auto;
-  color: color-mix(in srgb, var(--color-muted), transparent 28%);
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 12;
+  color: color-mix(in srgb, var(--color-muted), transparent 36%);
   font-size: 12px;
+  line-height: 1;
   white-space: nowrap;
-  opacity: 0.72;
+  opacity: 0.62;
+  pointer-events: none;
 }
 
 .work-link-list {
