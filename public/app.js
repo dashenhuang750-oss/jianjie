@@ -243,7 +243,7 @@ function renderProfile(profile) {
     return button;
   }));
 
-  renderAnalyticsFact();
+  renderAnalyticsMeter();
 }
 
 async function trackVisit() {
@@ -260,13 +260,13 @@ async function trackVisit() {
 
     if (!response.ok) return;
     state.analytics = await response.json();
-    renderAnalyticsFact();
+    renderAnalyticsMeter();
   } catch (error) {
     try {
       const response = await fetch("/api/analytics", { cache: "no-store" });
       if (!response.ok) return;
       state.analytics = await response.json();
-      renderAnalyticsFact();
+      renderAnalyticsMeter();
     } catch (fallbackError) {
       // Analytics is optional; the profile should stay usable if storage is unavailable.
     }
@@ -285,25 +285,18 @@ function getAnalyticsVisitorId() {
   return id;
 }
 
-function renderAnalyticsFact() {
-  if (!elements.factGrid || !state.analytics) return;
+function renderAnalyticsMeter() {
+  if (!elements.linkList || !state.analytics) return;
 
-  let item = elements.factGrid.querySelector("[data-analytics-fact]");
+  let item = elements.linkList.querySelector("[data-analytics-meter]");
   if (!item) {
-    item = document.createElement("article");
-    item.className = "fact analytics-fact";
-    item.dataset.analyticsFact = "true";
-
-    const label = document.createElement("strong");
-    label.textContent = "访问统计";
-
-    const value = document.createElement("span");
-    item.append(label, value);
-    elements.factGrid.append(item);
+    item = document.createElement("span");
+    item.className = "analytics-meter";
+    item.dataset.analyticsMeter = "true";
+    elements.linkList.append(item);
   }
 
-  const value = item.querySelector("span");
-  value.textContent = `总浏览 ${formatCount(state.analytics.totalViews)} 次 · 访客 ${formatCount(state.analytics.uniqueVisitors)} 人 · 今日 ${formatCount(state.analytics.todayViews)} 次`;
+  item.textContent = `浏览 ${formatCount(state.analytics.totalViews)} · 访客 ${formatCount(state.analytics.uniqueVisitors)}`;
 }
 
 function formatCount(value) {
