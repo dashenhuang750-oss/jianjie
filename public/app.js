@@ -1505,13 +1505,14 @@ async function sendCurrentMessage() {
     loading.remove();
 
     if (!response.ok) {
-      throw new Error(data.error || "请求失败");
+      const detail = data.detail ? `：${data.detail}` : "";
+      throw new Error(`${data.error || "请求失败"}${detail}`);
     }
 
     appendMessage(
       "assistant",
       data.answer || "这个问题我暂时没有足够资料回答。",
-      data.source === "openai" ? "AI 分身" : "本地风格模式"
+      "AI 分身"
     );
   } catch (error) {
     loading.remove();

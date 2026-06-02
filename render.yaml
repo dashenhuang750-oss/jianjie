@@ -7,11 +7,23 @@ services:
     startCommand: node server.js
     autoDeploy: true
     envVars:
-      - key: OPENAI_MODEL
-        value: gpt-4.1-mini
+      - key: DEEPSEEK_API_URL
+        value: "https://api.deepseek.com"
+      - key: DEEPSEEK_MODEL
+        value: deepseek-v4-flash
+      - key: CHAT_RATE_LIMIT_PER_MINUTE
+        value: "6"
+      - key: CHAT_DAILY_LIMIT_PER_IP
+        value: "40"
+      - key: CHAT_MAX_MESSAGE_CHARS
+        value: "700"
+      - key: CHAT_MAX_HISTORY_ITEMS
+        value: "4"
+      - key: CHAT_MAX_OUTPUT_TOKENS
+        value: "420"
       - key: GUESTBOOK_ADMIN_PASSWORD
         sync: false
-      - key: OPENAI_API_KEY
+      - key: DEEPSEEK_API_KEY
         sync: false
       - key: PUBLIC_SITE_URL
         value: "https://huangwenhao.com"

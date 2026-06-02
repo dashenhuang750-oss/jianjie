@@ -28,7 +28,7 @@ E:\personal-profile-ai
 - 提供 `/api/profile` 给前端读取公开资料。
 - 提供 `/api/chat` 给 AI 问答使用。
 - 提供 `/api/guestbook` 给留言板发布、读取、删除留言。
-- 保护管理员密码和 OpenAI API Key，不让它们暴露到浏览器代码里。
+- 保护管理员密码和 DeepSeek API Key，不让它们暴露到浏览器代码里。
 
 因此正式上线时，不能只用 GitHub Pages。它需要 Railway、Render、Vercel、VPS 等能运行 Node.js 的平台。
 
@@ -53,8 +53,8 @@ profile.config.json
 
 AI 问答分两层：
 
-- 如果配置了 `OPENAI_API_KEY`，网站会调用 OpenAI API，根据你的资料回答。
-- 如果没有配置 API Key，网站会用本地资料库 `knowledgeBase` 做基础回答，网站仍然可以运行。
+- 如果配置了 `DEEPSEEK_API_KEY`，网站会调用 DeepSeek API，根据你的资料回答。
+- 如果没有配置 API Key，AI 分身会明确提示接口未配置，不使用本地假回答。
 
 为了防止 AI 乱编，后端会把 `profile.config.json` 里的资料作为系统提示传给模型，并要求它只基于资料回答，不确定就说明不确定。
 
@@ -266,8 +266,9 @@ railway.cmd domain --service zonal-elegance --project 4923a666-144a-45ea-9d92-9d
 Railway 云端需要配置环境变量：
 
 ```text
-OPENAI_MODEL=gpt-4.1-mini
-OPENAI_API_KEY=你的 OpenAI Key，可选
+DEEPSEEK_API_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_API_KEY=你的 DeepSeek Key，可选
 GUESTBOOK_ADMIN_PASSWORD=你的留言删除密码
 PUBLIC_SITE_URL=Railway 生成的公开网址
 ```
@@ -306,7 +307,7 @@ Railway 这边目前卡点是：命令行还没有拿到可用的项目部署授
 ## 五、上线前建议
 
 - 把 `.env` 里的 `GUESTBOOK_ADMIN_PASSWORD` 换成强密码。
-- 如果要真的 AI 回答，配置 `OPENAI_API_KEY`。
+- 如果要真的 AI 回答，配置 `DEEPSEEK_API_KEY`。
 - 如果要长期保存留言，给云端配置持久磁盘或数据库。
 - 如果公开源代码，不要上传 `.env`、`data/guestbook.json`、token 脚本和日志文件。
 - 每次上线前运行 `npm.cmd run check`。

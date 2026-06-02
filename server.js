@@ -12,13 +12,20 @@ loadEnvFile(path.join(ROOT, ".env"));
 loadYamlEnv(path.join(ROOT, "render.yaml"));
 
 const PORT = Number(process.env.PORT || 8787);
-const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
+const DEEPSEEK_API_URL = (process.env.DEEPSEEK_API_URL || "https://api.deepseek.com").replace(/\/$/, "");
+const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-v4-flash";
 const PUBLIC_SITE_URL = cleanPublicUrl(process.env.PUBLIC_SITE_URL || "");
+const CHAT_RATE_LIMIT_PER_MINUTE = clampNumber(process.env.CHAT_RATE_LIMIT_PER_MINUTE, 1, 60, 6);
+const CHAT_DAILY_LIMIT_PER_IP = clampNumber(process.env.CHAT_DAILY_LIMIT_PER_IP, 1, 1000, 40);
+const CHAT_MAX_MESSAGE_CHARS = clampNumber(process.env.CHAT_MAX_MESSAGE_CHARS, 80, 1200, 700);
+const CHAT_MAX_HISTORY_ITEMS = clampNumber(process.env.CHAT_MAX_HISTORY_ITEMS, 0, 12, 4);
+const CHAT_MAX_OUTPUT_TOKENS = clampNumber(process.env.CHAT_MAX_OUTPUT_TOKENS, 120, 1200, 420);
 const LEGACY_GUESTBOOK_PATH = path.join(ROOT, "data", "guestbook.json");
 const GUESTBOOK_PATH = resolveGuestbookPath();
 const ANALYTICS_PATH = resolveDataFilePath("analytics.json");
 const JSON_LIMIT_BYTES = 64 * 1024;
 const RATE_LIMITS = new Map();
+const CHAT_DAILY_USAGE = new Map();
 let guestbookMemory = [];
 let analyticsMemory = createEmptyAnalytics();
 
@@ -84,7 +91,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/chat") {
-      if (isRateLimited(req, res, "chat", 18, 60 * 1000)) return;
+      if (!isAllowedChatOrigin(req)) {
+        return sendJson(res, 403, { error: "Chat requests must come from this site." });
+      }
+      if (isRateLimited(req, res, "chat", CHAT_RATE_LIMIT_PER_MINUTE, 60 * 1000)) return;
       return await handleChat(req, res);
     }
 
@@ -134,25 +144,27 @@ async function handleChat(req, res) {
     return sendJson(res, 400, { error: "Message is required" });
   }
 
-  if (message.length > 1200) {
-    return sendJson(res, 400, { error: "Message is too long" });
+  if (message.length > CHAT_MAX_MESSAGE_CHARS) {
+    return sendJson(res, 400, { error: `Message is too long. Limit is ${CHAT_MAX_MESSAGE_CHARS} characters.` });
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    return sendJson(res, 200, {
-      answer: createLocalAnswer(message, profile),
-      source: "local"
+  if (isChatDailyLimited(req, res)) {
+    return;
+  }
+
+  if (!process.env.DEEPSEEK_API_KEY) {
+    return sendJson(res, 503, {
+      error: "DeepSeek API key is not configured. Set DEEPSEEK_API_KEY to enable AI answers."
     });
   }
 
   try {
-    const answer = await createOpenAIAnswer({ message, history, profile });
-    sendJson(res, 200, { answer, source: "openai" });
+    const answer = await createDeepSeekAnswer({ message, history, profile });
+    sendJson(res, 200, { answer, source: "deepseek" });
   } catch (error) {
-    sendJson(res, 200, {
-      answer: createLocalAnswer(message, profile),
-      source: "local",
-      note: `AI service fell back locally: ${error.message}`
+    sendJson(res, 502, {
+      error: "DeepSeek request failed",
+      detail: error.message
     });
   }
 }
@@ -229,17 +241,17 @@ async function handleGuestbookDelete(req, res, url) {
   });
 }
 
-async function createOpenAIAnswer({ message, history, profile }) {
+async function createDeepSeekAnswer({ message, history, profile }) {
   const safeHistory = history
     .filter((item) => item && ["user", "assistant"].includes(item.role))
-    .slice(-8)
+    .slice(-CHAT_MAX_HISTORY_ITEMS)
     .map((item) => ({
       role: item.role,
-      content: cleanText(item.content || "").slice(0, 1000)
+      content: cleanText(item.content || "").slice(0, 600)
     }))
     .filter((item) => item.content);
 
-  const input = [
+  const messages = [
     {
       role: "system",
       content: buildSystemPrompt(profile)
@@ -251,17 +263,20 @@ async function createOpenAIAnswer({ message, history, profile }) {
     }
   ];
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch(`${DEEPSEEK_API_URL}/chat/completions`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
       model: MODEL,
-      input,
-      max_output_tokens: 520
-    })
+      messages,
+      max_tokens: CHAT_MAX_OUTPUT_TOKENS,
+      stream: false,
+      thinking: { type: "disabled" }
+    }),
+    signal: AbortSignal.timeout(25 * 1000)
   });
 
   const data = await response.json().catch(() => ({}));
@@ -271,7 +286,7 @@ async function createOpenAIAnswer({ message, history, profile }) {
     throw new Error(detail);
   }
 
-  const answer = extractResponseText(data);
+  const answer = extractDeepSeekChatText(data);
   if (!answer) {
     throw new Error("Empty model response");
   }
@@ -293,50 +308,10 @@ function buildSystemPrompt(profile) {
   ].join("\n");
 }
 
-function extractResponseText(data) {
-  if (typeof data.output_text === "string") {
-    return data.output_text.trim();
-  }
-
-  if (!Array.isArray(data.output)) {
-    return "";
-  }
-
-  return data.output
-    .flatMap((item) => item.content || [])
-    .map((part) => {
-      if (typeof part.text === "string") return part.text;
-      if (part.type === "output_text" && typeof part.text === "string") return part.text;
-      return "";
-    })
-    .join("")
-    .trim();
-}
-
-function createLocalAnswer(message, profile) {
-  const entries = Array.isArray(profile.knowledgeBase) ? profile.knowledgeBase : [];
-  const normalized = message.toLowerCase();
-  let best = null;
-  let bestScore = 0;
-
-  for (const entry of entries) {
-    const keywords = Array.isArray(entry.keywords) ? entry.keywords : [];
-    const score = keywords.reduce((total, keyword) => {
-      const key = String(keyword).toLowerCase();
-      return total + (key && normalized.includes(key) ? 2 : 0);
-    }, normalized.includes(String(entry.topic || "").toLowerCase()) ? 1 : 0);
-
-    if (score > bestScore) {
-      best = entry;
-      bestScore = score;
-    }
-  }
-
-  const matched = best && best.answer
-    ? best.answer
-    : `${profile.summary || "目前资料还不完整。"} 这个问题我还没有足够资料回答得很具体，但我会更倾向于先说清楚真实情况，再给出可以继续沟通的方向。`;
-
-  return matched;
+function extractDeepSeekChatText(data) {
+  const choice = Array.isArray(data.choices) ? data.choices[0] : null;
+  const content = choice && choice.message ? choice.message.content : "";
+  return typeof content === "string" ? content.trim() : "";
 }
 
 async function handleAnalyticsSummary(res) {
@@ -831,9 +806,32 @@ function cleanPublicUrl(value) {
   return /^https?:\/\//i.test(url) ? url : "";
 }
 
+function clampNumber(value, min, max, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, Math.floor(parsed)));
+}
+
 function getClientKey(req) {
   const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
   return forwarded || req.socket.remoteAddress || "local";
+}
+
+function isAllowedChatOrigin(req) {
+  const origin = cleanPublicUrl(req.headers.origin || "");
+  const referer = cleanPublicUrl(req.headers.referer || "");
+  const host = String(req.headers.host || "").toLowerCase();
+
+  if (!origin && !referer) return true;
+
+  const allowed = new Set([
+    `http://${host}`,
+    `https://${host}`,
+    PUBLIC_SITE_URL
+  ].filter(Boolean).map((value) => value.toLowerCase()));
+
+  const source = (origin || referer).toLowerCase();
+  return [...allowed].some((allowedOrigin) => source === allowedOrigin || source.startsWith(`${allowedOrigin}/`));
 }
 
 function isRateLimited(req, res, bucket, maxRequests, windowMs) {
@@ -858,6 +856,46 @@ function isRateLimited(req, res, bucket, maxRequests, windowMs) {
   });
   res.end(JSON.stringify({ error: "请求太频繁，请稍后再试" }));
   return true;
+}
+
+function isChatDailyLimited(req, res) {
+  const now = new Date();
+  const day = now.toISOString().slice(0, 10);
+  const key = `chat:${day}:${getClientKey(req)}`;
+  const tomorrow = new Date(now);
+  tomorrow.setUTCHours(24, 0, 0, 0);
+
+  cleanupDailyChatUsage(day);
+
+  const current = CHAT_DAILY_USAGE.get(key) || {
+    count: 0,
+    day,
+    resetAt: tomorrow.getTime()
+  };
+
+  current.count += 1;
+  CHAT_DAILY_USAGE.set(key, current);
+
+  if (current.count <= CHAT_DAILY_LIMIT_PER_IP) {
+    return false;
+  }
+
+  res.writeHead(429, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Retry-After": String(Math.max(60, Math.ceil((current.resetAt - Date.now()) / 1000))),
+    ...getSecurityHeaders()
+  });
+  res.end(JSON.stringify({ error: "Daily chat limit reached. Please try again tomorrow." }));
+  return true;
+}
+
+function cleanupDailyChatUsage(currentDay) {
+  if (CHAT_DAILY_USAGE.size < 1000) return;
+  for (const [key, value] of CHAT_DAILY_USAGE.entries()) {
+    if (!value || value.day !== currentDay || value.resetAt <= Date.now()) {
+      CHAT_DAILY_USAGE.delete(key);
+    }
+  }
 }
 
 function createRobotsTxt() {
@@ -1006,6 +1044,7 @@ function cleanVersion(value) {
 function getSecurityHeaders() {
   return {
     "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
   };
