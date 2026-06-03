@@ -18,7 +18,7 @@ http://localhost:8787
 
 1. 用 VSCode 打开这个文件夹。
 2. 编辑 `profile.config.json`，把名字、经历、项目、联系方式和语气改成你自己的。
-3. 如果要接入真实 AI，复制 `.env.example` 为 `.env`，填入 `OPENAI_API_KEY`。
+3. 如果要接入真实 AI，复制 `.env.example` 为 `.env`，填入 `DEEPSEEK_API_KEY`。
 4. 在 VSCode 里运行任务 `Start personal profile site`，或直接在终端执行 `node server.js`。
 
 ## 让回答更像你
@@ -61,12 +61,20 @@ http://localhost:8787
 部署时设置环境变量：
 
 ```text
-OPENAI_API_KEY=你的 key
-OPENAI_MODEL=gpt-4.1-mini
+DEEPSEEK_API_KEY=你的 key
+DEEPSEEK_API_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+CHAT_RATE_LIMIT_PER_MINUTE=6
+CHAT_DAILY_LIMIT_PER_IP=40
+CHAT_MAX_MESSAGE_CHARS=700
+CHAT_MAX_HISTORY_ITEMS=4
+CHAT_MAX_OUTPUT_TOKENS=420
 PORT=8787
 ```
 
-如果不设置 `OPENAI_API_KEY`，网站仍然可以运行，会使用本地风格兜底回答。
+如果不设置 `DEEPSEEK_API_KEY`，网站仍然可以运行，但 AI 分身会提示接口未配置，不会使用本地假回答。
+
+AI 分身接口默认带防刷保护：只允许本站来源请求、限制每个 IP 每分钟和每天的聊天次数，并限制单条消息、历史上下文和输出长度，避免公开页面被刷掉 DeepSeek 额度。
 
 ## 留言持久化
 
