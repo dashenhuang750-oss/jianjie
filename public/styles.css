@@ -2182,8 +2182,10 @@ body[data-theme="dark"] {
 }
 
 .guestbook-list {
+  display: flex;
+  flex-direction: column;
   align-content: start;
-  grid-auto-rows: auto;
+  gap: var(--space-3);
   min-height: 440px;
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: var(--radius-md);
@@ -2193,9 +2195,12 @@ body[data-theme="dark"] {
 }
 
 .guestbook-message {
-  display: grid;
-  gap: var(--space-2);
+  display: block;
+  flex: 0 0 auto;
   min-width: 0;
+  height: auto;
+  min-height: 0;
+  contain: layout paint;
   border-radius: 8px;
   border: 1px solid rgba(17, 24, 39, 0.08);
   background:
@@ -2214,11 +2219,13 @@ body[data-theme="dark"] {
 }
 
 .guestbook-message p {
+  display: block;
   margin: 0;
   color: var(--color-body);
   line-height: 1.65;
   overflow-wrap: anywhere;
   word-break: break-word;
+  white-space: normal;
 }
 
 .guestbook-status {
