@@ -16,8 +16,8 @@ module.exports = {
   links: [
     {
       label: "邮箱",
-      value: "3435738857@qq.com",
-      href: "mailto:3435738857@qq.com"
+      value: "wenhao_h2007@163.com",
+      href: "mailto:wenhao_h2007@163.com"
     },
     {
       label: "微信",
@@ -177,6 +177,12 @@ module.exports = {
             }
           ]
         }
+      ],
+      works: [
+        {
+          href: "/works/粒子.html",
+          linkLabel: "粒子.html"
+        }
       ]
     },
     {
@@ -265,7 +271,7 @@ module.exports = {
       summary: "适合围绕建模竞赛、统计建模、数据分析、AI 工具实践和学习交流展开沟通。",
       accent: "#173c34",
       contacts: [
-        { label: "邮箱", value: "3435738857@qq.com", href: "mailto:3435738857@qq.com" },
+        { label: "邮箱", value: "wenhao_h2007@163.com", href: "mailto:wenhao_h2007@163.com" },
         { label: "微信", value: "h3435738857" },
         { label: "QQ", value: "3435738857" },
         { label: "电话", value: "15608744434", href: "tel:15608744434" }
@@ -332,7 +338,7 @@ module.exports = {
     {
       topic: "合作方式",
       keywords: ["合作", "联系", "邮箱", "微信", "QQ", "电话", "怎么联系"],
-      answer: "可以通过邮箱 3435738857@qq.com、微信 h3435738857、QQ 3435738857 或电话 15608744434 联系我。比较适合交流建模竞赛、统计建模、数据分析、AI 工具实践和学习互助。"
+      answer: "可以通过邮箱 wenhao_h2007@163.com、微信 h3435738857、QQ 3435738857 或电话 15608744434 联系我。比较适合交流建模竞赛、统计建模、数据分析、AI 工具实践和学习互助。"
     }
   ],
   voice: {
