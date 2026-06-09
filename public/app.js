@@ -916,35 +916,20 @@ function renderWorkCards(works, container) {
   const items = Array.isArray(works) ? works : [];
   if (items.length === 0) return;
 
-  const heading = document.createElement("h3");
-  heading.className = "work-link-heading";
-  heading.textContent = "作品链接";
+  renderProjectCards(items.map((work) => {
+    if (Array.isArray(work.links)) return work;
 
-  const list = document.createElement("ul");
-  list.className = "work-link-list";
-  list.append(...items.map((work) => {
-    const item = document.createElement("li");
-    const label = work.linkLabel || work.title || "作品链接";
-
-    if (work.href) {
-      const link = document.createElement("a");
-      link.href = work.href;
-      link.textContent = label;
-      link.target = link.href.startsWith("http") ? "_blank" : "";
-      link.rel = link.target ? "noreferrer" : "";
-      item.append(link);
-    } else {
-      const placeholder = document.createElement("span");
-      placeholder.className = "work-link-placeholder";
-      placeholder.textContent = label;
-      placeholder.title = "链接待补充";
-      item.append(placeholder);
-    }
-
-    return item;
-  }));
-
-  container.append(heading, list);
+    return {
+      title: work.title || work.linkLabel || "????",
+      role: work.role || "???? / ????",
+      description: work.description || "",
+      contributions: work.contributions,
+      tags: work.tags,
+      links: work.href
+        ? [{ href: work.href, label: work.linkLabel || work.title || "????" }]
+        : []
+    };
+  }), container);
 }
 
 function createProjectActions(project) {

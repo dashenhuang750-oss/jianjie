@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全息手势魔法阵 (稳定版)</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', monospace; }
+        
+        /* 错误和加载日志显示区 */
+        #debug-console {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00ff00;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border: 1px solid #00ff00;
+            max-width: 80%;
+            z-index: 999;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        /* 隐藏的视频元素 */
+        #input-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+        }
+
+        /* UI 界面 */
+        #ui-layer {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .hud-text { font-size: 20px; font-weight: bold; }
+        .sub-text { font-size: 14px; opacity: 0.7; }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="debug-console">系统初始化中...<br>请在弹窗中允许摄像头权限。</div>
+
+    <div id="ui-layer">
+        <div class="hud-text" id="status-text">系统待机</div>
+        <div class="sub-text">移动手掌控制方向 | 手掌靠近屏幕进行充能</div>
+    </div>
+
+    <video id="input-video"></video>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- 全局变量 ---
+        const debugConsole = document.getElementById('debug-console');
+        const statusText = document.getElementById('status-text');
+        
+        let scene, camera, renderer, composer;
+        let magicGroup, rings = [], particles;
+        let isCharging = false;
+        let targetRotX = 0, targetRotZ = 0;
+        let time = 0;
+        
+        // 颜色定义
+        const COLOR_BLUE = new THREE.Color(0.1, 0.6, 1.0);
+        const COLOR_RED = new THREE.Color(2.0, 0.2, 0.1); // HDR Red
+        const currentColor = COLOR_BLUE.clone();
+
+        // 日志辅助函数
+        function log(msg, isError = false) {
+            debugConsole.innerHTML = msg;
+            debugConsole.style.color = isError ? 'red' : '#00ff00';
+            debugConsole.style.borderColor = isError ? 'red' : '#00ff00';
+            if (!isError) {
+                // 成功后2秒隐藏日志
+                setTimeout(() => { debugConsole.style.display = 'none'; }, 2000);
+            }
+        }
+
+        // --- 1. Three.js 初始化 ---
+        function initThree() {
+            try {
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x000000, 0.03);
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera.position.set(0, 0, 20);
+
+                renderer = new THREE.WebGLRenderer({ antialias: false });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.toneMapping = THREE.ReinhardToneMapping;
+                document.body.appendChild(renderer.domElement);
+
+                // 后处理 (Bloom)
+                const renderScene = new RenderPass(scene, camera);
+                const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+                bloomPass.strength = 2.5; // 强度
+                bloomPass.radius = 0.5;
+                bloomPass.threshold = 0;
+
+                composer = new EffectComposer(renderer);
+                composer.addPass(renderScene);
+                composer.addPass(bloomPass);
+
+                createMagicCircle();
+                createParticles();
+                
+                window.addEventListener('resize', onResize);
+                log("图形引擎启动成功...");
+                
+                // 开始渲染循环
+                animate();
+            } catch (e) {
+                log("Three.js 初始化失败: " + e.message, true);
+            }
+        }
+
+        // --- 2. 创建魔法阵 ---
+        function createMagicCircle() {
+            magicGroup = new THREE.Group();
+            scene.add(magicGroup);
+
+            const mat = new THREE.LineBasicMaterial({ color: COLOR_BLUE });
+
+            // 环1
+            const geo1 = new THREE.TorusGeometry(6, 0.05, 16, 100);
+            const ring1 = new THREE.LineSegments(new THREE.WireframeGeometry(geo1), mat.clone());
+            ring1.userData = { speed: 0.01, dir: 1 };
+            magicGroup.add(ring1);
+            rings.push(ring1);
+
+            // 环2 (结)
+            const geo2 = new THREE.TorusKnotGeometry(4, 0.1, 100, 16);
+            const ring2 = new THREE.LineSegments(new THREE.WireframeGeometry(geo2), mat.clone());
+            ring2.rotation.x = Math.PI / 2;
+            ring2.scale.y = 0.2;
+            ring2.userData = { speed: 0.02, dir: -1 };
+            magicGroup.add(ring2);
+            rings.push(ring2);
+
+            // 环3 (内芯)
+            const geo3 = new THREE.IcosahedronGeometry(2, 1);
+            const ring3 = new THREE.LineSegments(new THREE.WireframeGeometry(geo3), mat.clone());
+            ring3.userData = { speed: 0.03, dir: 1 };
+            magicGroup.add(ring3);
+            rings.push(ring3);
+        }
+
+        function createParticles() {
+            const geom = new THREE.BufferGeometry();
+            const pos = [];
+            for(let i=0; i<500; i++) {
+                pos.push((Math.random()-0.5)*10, (Math.random()-0.5)*10, (Math.random()-0.5)*5);
+            }
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            const mat = new THREE.PointsMaterial({ color: COLOR_BLUE, size: 0.1, blending: THREE.AdditiveBlending });
+            particles = new THREE.Points(geom, mat);
+            magicGroup.add(particles);
+        }
+
+        // --- 3. 动画循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // 颜色插值
+            const targetColor = isCharging ? COLOR_RED : COLOR_BLUE;
+            currentColor.lerp(targetColor, 0.1);
+
+            // 应用颜色和旋转
+            const speedMult = isCharging ? 4.0 : 1.0;
+            rings.forEach(ring => {
+                ring.material.color.copy(currentColor);
+                ring.rotation.z += ring.userData.speed * ring.userData.dir * speedMult;
+                if(isCharging) {
+                    ring.rotation.x += 0.01; // 充能时抖动
+                }
+            });
+            if(particles) particles.material.color.copy(currentColor);
+
+            // 手势控制视角跟随
+            magicGroup.rotation.x += (targetRotX - magicGroup.rotation.x) * 0.1;
+            magicGroup.rotation.y += (targetRotZ - magicGroup.rotation.y) * 0.1; // 修正为 Y 轴左右旋转更自然
+
+            composer.render();
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- 4. MediaPipe 手势识别逻辑 ---
+        function onResults(results) {
+            // 如果日志还显示，且检测到了手，说明成功，隐藏日志
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                debugConsole.style.display = 'none';
+                
+                const hand = results.multiHandLandmarks[0];
+                const wrist = hand[0]; // 0号点是手腕
+
+                // 计算位置 (归一化 0~1 -> -1~1)
+                // x: 0(左) -> 1(右), y: 0(上) -> 1(下)
+                const x = (1 - wrist.x) * 2 - 1; // 镜像翻转
+                const y = -(wrist.y * 2 - 1); // 反转Y轴
+
+                // 映射到旋转
+                targetRotZ = x * 1.0; 
+                targetRotX = y * 1.0;
+
+                // 深度检测 (z值越小越近)
+                // 通常 z 在 -0.1 (非常近) 到 0.0 (正常) 左右，取决于摄像头
+                // 我们设定一个阈值，比如 -0.05
+                // 注意：Mediapipe Hands 的 Z 坐标是相对腕关节的，这在 Web 上比较难直接用绝对距离。
+                // 替代方案：检测大拇指指尖(4)和小指指尖(20)的距离，模拟捏合或手掌大小
+                
+                // 简单方案：使用手在画面中的大小（手的边界框）来估算距离
+                // 这里我们简化：如果手腕非常靠下 (y < -0.5) 或者某个逻辑触发
+                // 为了简单稳定，我们改用“捏合拳头”来充能
+                
+                // 计算食指指尖(8)和拇指指尖(4)的距离
+                const thumb = hand[4];
+                const indexFinger = hand[8];
+                const dist = Math.sqrt(Math.pow(thumb.x-indexFinger.x, 2) + Math.pow(thumb.y-indexFinger.y, 2));
+                
+                // 距离小于 0.05 算捏合
+                isCharging = dist < 0.05;
+
+                if (isCharging) {
+                    statusText.innerText = "⚡ 能量过载 ⚡";
+                    statusText.style.color = "#ff3300";
+                } else {
+                    statusText.innerText = "系统运行中";
+                    statusText.style.color = "#00ffff";
+                }
+
+            } else {
+                isCharging = false;
+            }
+        }
+
+        // --- 5. 启动流程 ---
+        async function startApp() {
+            initThree();
+
+            const videoElement = document.getElementById('input-video');
+
+            try {
+                log("正在加载 AI 模型...");
+                const hands = new Hands({locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                }});
+
+                hands.setOptions({
+                    maxNumHands: 1,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                hands.onResults(onResults);
+
+                log("正在请求摄像头权限...");
+                const camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await hands.send({image: videoElement});
+                    },
+                    width: 640,
+                    height: 480
+                });
+
+                await camera.start();
+                log("系统启动成功！挥动你的手！");
+
+            } catch (e) {
+                log("摄像头启动失败: " + e.message + "<br>请检查浏览器权限或是否在 HTTPS/Localhost 环境下运行。", true);
+            }
+        }
+
+        // 页面加载完成后启动
+        window.onload = startApp;
+
+    </script>
+</body>
+</html>

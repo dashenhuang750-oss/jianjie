@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创意互动展示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header {
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #ff7e5f, #feb47b, #86a8e7, #91eae4);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            position: relative;
+            display: inline-block;
+        }
+        
+        h1 .highlight {
+            font-size: 4rem;
+            color: #ff6b6b;
+            text-shadow: 0 0 15px #ff6b6b;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: #b0b0ff;
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .text-display {
+            flex: 1;
+            min-width: 300px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.2));
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .text-display h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #ffcc00;
+        }
+        
+        .target-text {
+            font-size: 4rem;
+            font-weight: bold;
+            padding: 20px;
+            background: linear-gradient(to right, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(255, 126, 95, 0.5);
+            border-radius: 10px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .interactive-section {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .interactive-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #7ee8fa;
+        }
+        
+        .interactive-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(to right, #36d1dc, #5b86e5);
+            color: white;
+        }
+        
+        .btn-tertiary {
+            background: linear-gradient(to right, #a8ff78, #78ffd6);
+            color: #333;
+        }
+        
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .click-counter {
+            font-size: 1.2rem;
+            color: #ffcc00;
+            margin-top: 20px;
+        }
+        
+        .effects-display {
+            width: 100%;
+            max-width: 600px;
+            height: 200px;
+            margin: 20px auto;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .effect-element {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .footer {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #aaa;
+            text-align: center;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            h1 .highlight {
+                font-size: 3rem;
+            }
+            
+            .target-text {
+                font-size: 3rem;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>创意<span class="highlight">互动</span>展示</h1>
+            <p class="subtitle">点击下方按钮，体验有趣的互动效果</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="text-display">
+                <h2><i class="fas fa-quote-left"></i> 展示文字 <i class="fas fa-quote-right"></i></h2>
+                <div class="target-text" id="targetText">孙老屎好丑</div>
+            </div>
+            
+            <div class="interactive-section">
+                <h3 class="interactive-title">互动控制面板</h3>
+                <div class="interactive-buttons">
+                    <button class="btn btn-primary" id="colorBtn">
+                        <i class="fas fa-palette"></i> 改变颜色
+                    </button>
+                    <button class="btn btn-secondary" id="sizeBtn">
+                        <i class="fas fa-expand-alt"></i> 改变大小
+                    </button>
+                    <button class="btn btn-tertiary" id="effectBtn">
+                        <i class="fas fa-magic"></i> 显示特效
+                    </button>
+                </div>
+                
+                <div class="click-counter">
+                    特效触发次数: <span id="clickCount">0</span>
+                </div>
+                
+                <div class="effects-display" id="effectsArea">
+                    <div class="effect-element" id="effectText">特效展示区</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>点击任意互动按钮体验效果 | 设计用于演示目的</p>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const targetText = document.getElementById('targetText');
+        const colorBtn = document.getElementById('colorBtn');
+        const sizeBtn = document.getElementById('sizeBtn');
+        const effectBtn = document.getElementById('effectBtn');
+        const effectsArea = document.getElementById('effectsArea');
+        const effectText = document.getElementById('effectText');
+        const clickCountEl = document.getElementById('clickCount');
+        
+        // 颜色方案数组
+        const colorSchemes = [
+            { text: 'linear-gradient(to right, #ff7e5f, #feb47b)', name: '橙红渐变' },
+            { text: 'linear-gradient(to right, #36d1dc, #5b86e5)', name: '蓝绿渐变' },
+            { text: 'linear-gradient(to right, #a8ff78, #78ffd6)', name: '绿青渐变' },
+            { text: 'linear-gradient(to right, #ff0080, #ff8c00)', name: '粉橙渐变' },
+            { text: 'linear-gradient(to right, #8a2387, #f27121)', name: '紫橙渐变' },
+            { text: 'linear-gradient(to right, #f4c4f3, #fc67fa)', name: '粉紫渐变' }
+        ];
+        
+        // 字体大小数组
+        const fontSizes = ['3rem', '4rem', '5rem', '3.5rem', '4.5rem'];
+        
+        // 特效文本数组
+        const effectTexts = [
+            '特效触发！', '酷炫效果！', '互动成功！', '效果展示中', '动态效果！'
+        ];
+        
+        // 初始化点击计数器
+        let clickCount = 0;
+        
+        // 颜色按钮点击事件
+        colorBtn.addEventListener('click', function() {
+            // 随机选择一个颜色方案
+            const randomIndex = Math.floor(Math.random() * colorSchemes.length);
+            const selectedScheme = colorSchemes[randomIndex];
+            
+            // 应用新的颜色
+            targetText.style.backgroundImage = selectedScheme.text;
+            
+            // 显示提示
+            showEffect(`颜色已更改为: ${selectedScheme.name}`);
+            
+            // 创建粒子效果
+            createParticles(colorBtn, selectedScheme.text);
+            
+            // 更新点击计数
+            updateClickCount();
+        });
+        
+        // 大小按钮点击事件
+        sizeBtn.addEventListener('click', function() {
+            // 随机选择一个字体大小
+            const randomIndex = Math.floor(Math.random() * fontSizes.length);
+            const newSize = fontSizes[randomIndex];
+            
+            // 应用新的字体大小
+            targetText.style.fontSize = newSize;
+            
+            // 显示提示
+            showEffect(`字体大小已调整为: ${newSize}`);
+            
+            // 创建粒子效果
+            createParticles(sizeBtn, 'linear-gradient(to right, #36d1dc, #5b86e5)');
+            
+            // 更新点击计数
+            updateClickCount();
+        });
+        
+        // 特效按钮点击事件
+        effectBtn.addEventListener('click', function() {
+            // 随机选择一个特效文本
+            const randomIndex = Math.floor(Math.random() * effectTexts.length);
+            const selectedText = effectTexts[randomIndex];
+            
+            // 显示特效文本
+            effectText.textContent = selectedText;
+            effectText.style.opacity = '1';
+            
+            // 随机设置特效文本颜色
+            const randomColor = getRandomColor();
+            effectText.style.color = randomColor;
+            
+            // 3秒后隐藏特效文本
+            setTimeout(() => {
+                effectText.style.opacity = '0';
+            }, 3000);
+            
+            // 创建粒子效果
+            createParticles(effectBtn, 'linear-gradient(to right, #a8ff78, #78ffd6)');
+            
+            // 在特效区域添加随机形状
+            createRandomShapes();
+            
+            // 更新点击计数
+            updateClickCount();
+        });
+        
+        // 显示特效提示函数
+        function showEffect(message) {
+            effectText.textContent = message;
+            effectText.style.opacity = '1';
+            
+            // 随机设置特效文本颜色
+            const randomColor = getRandomColor();
+            effectText.style.color = randomColor;
+            
+            // 3秒后隐藏特效文本
+            setTimeout(() => {
+                effectText.style.opacity = '0';
+            }, 2000);
+        }
+        
+        // 创建粒子效果
+        function createParticles(element, gradient) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            // 创建多个粒子
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // 设置粒子颜色
+                particle.style.background = gradient;
+                
+                // 设置初始位置
+                particle.style.left = `${centerX}px`;
+                particle.style.top = `${centerY}px`;
+                
+                // 添加到页面
+                document.body.appendChild(particle);
+                
+                // 随机方向和距离
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 50 + Math.random() * 100;
+                const targetX = centerX + Math.cos(angle) * distance;
+                const targetY = centerY + Math.sin(angle) * distance;
+                
+                // 动画粒子
+                particle.animate([
+                    { 
+                        transform: 'translate(0, 0) scale(1)', 
+                        opacity: 1 
+                    },
+                    { 
+                        transform: `translate(${targetX - centerX}px, ${targetY - centerY}px) scale(0.1)`, 
+                        opacity: 0 
+                    }
+                ], {
+                    duration: 1000 + Math.random() * 500,
+                    easing: 'cubic-bezier(0.2, 0, 0.8, 1)'
+                });
+                
+                // 动画结束后移除粒子
+                setTimeout(() => {
+                    particle.remove();
+                }, 1500);
+            }
+        }
+        
+        // 创建随机形状
+        function createRandomShapes() {
+            const shapes = ['circle', 'square', 'triangle'];
+            const colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#ff8e6b', '#6bff8e', '#6b8eff'];
+            
+            for (let i = 0; i < 8; i++) {
+                const shape = document.createElement('div');
+                const shapeType = shapes[Math.floor(Math.random() * shapes.length)];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                shape.style.position = 'absolute';
+                shape.style.backgroundColor = color;
+                shape.style.opacity = '0.7';
+                
+                // 设置随机位置
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                shape.style.left = `${posX}%`;
+                shape.style.top = `${posY}%`;
+                
+                // 设置形状样式
+                if (shapeType === 'circle') {
+                    shape.style.width = '20px';
+                    shape.style.height = '20px';
+                    shape.style.borderRadius = '50%';
+                } else if (shapeType === 'square') {
+                    shape.style.width = '25px';
+                    shape.style.height = '25px';
+                } else {
+                    // 三角形
+                    shape.style.width = '0';
+                    shape.style.height = '0';
+                    shape.style.backgroundColor = 'transparent';
+                    shape.style.borderLeft = '15px solid transparent';
+                    shape.style.borderRight = '15px solid transparent';
+                    shape.style.borderBottom = `25px solid ${color}`;
+                }
+                
+                // 添加到特效区域
+                effectsArea.appendChild(shape);
+                
+                // 动画效果
+                shape.animate([
+                    { transform: 'scale(0) rotate(0deg)', opacity: 0 },
+                    { transform: 'scale(1) rotate(360deg)', opacity: 0.7 },
+                    { transform: 'scale(0) rotate(720deg)', opacity: 0 }
+                ], {
+                    duration: 2000 + Math.random() * 1000,
+                    easing: 'cubic-bezier(0.2, 0, 0.8, 1)'
+                });
+                
+                // 动画结束后移除
+                setTimeout(() => {
+                    if (shape.parentNode) {
+                        shape.remove();
+                    }
+                }, 3000);
+            }
+        }
+        
+        // 获取随机颜色
+        function getRandomColor() {
+            const colors = ['#ff6b6b', '#4ecdc4', '#ffe66d', '#ff8e6b', '#6bff8e', '#6b8eff', '#d66bff'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // 更新点击计数
+        function updateClickCount() {
+            clickCount++;
+            clickCountEl.textContent = clickCount;
+        }
+        
+        // 初始加载时显示欢迎信息
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                showEffect('欢迎！点击按钮开始互动');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

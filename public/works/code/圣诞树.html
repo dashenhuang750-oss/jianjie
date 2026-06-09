@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture Controlled Xmas Tree | Three.js + MediaPipe</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505; /* 深邃黑底 */
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* 摄像头反馈 (用于调试，设为镜像并半透明) */
+        #video-feed {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 160px;
+            height: 120px;
+            transform: scaleX(-1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            opacity: 0.5;
+            z-index: 10;
+        }
+
+        /* UI 指引 */
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #FFD700; /* 金属金 */
+            z-index: 10;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 10px 0;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        .instruction {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .key {
+            color: #FF4500; /* 圣诞红 */
+            font-weight: bold;
+            margin-right: 10px;
+            width: 80px;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FFD700;
+            font-size: 1.2rem;
+            z-index: 20;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #FFD700;
+        }
+    </style>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+</head>
+<body>
+
+    <div id="loading">Initialize Vision Engine...<br><span style="font-size:0.8em; color:#aaa;">请允许摄像头权限</span></div>
+
+    <div id="ui-layer">
+        <h1>XMAS PHOTO CLOUD</h1>
+        <div class="instruction"><span class="key">✊ Fist</span>Assemble Tree</div>
+        <div class="instruction"><span class="key">🖐 Open</span>Explode / Scatter</div>
+        <div class="instruction"><span class="key">👌 Pinch</span>Zoom In</div>
+        <div class="instruction"><span class="key">👋 Move</span>Rotate Scene</div>
+    </div>
+
+    <video id="video-feed" playsinline></video>
+    <div id="canvas-container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- 全局配置 ---
+        const CONFIG = {
+            particleCount: 1500,
+            colors: [
+                new THREE.Color('#2F4F4F'), // 哑光绿
+                new THREE.Color('#FFD700'), // 金属金
+                new THREE.Color('#8B0000'), // 圣诞红
+                new THREE.Color('#FFFFFF')  // 闪光白
+            ],
+            treeHeight: 25,
+            treeRadius: 10,
+            scatterRadius: 40
+        };
+
+        // --- 状态管理 ---
+        const STATE = {
+            targetShape: 0, // 0 = Tree, 1 = Scatter
+            currentShapeVal: 0, // 用于插值
+            rotationTarget: 0,
+            zoomTarget: 1,
+            isHandDetected: false
+        };
+
+        // --- Three.js 初始化 ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.02); // 迷雾增加电影感
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 40);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true }); // Post-processing通常关闭原生AA
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        container.appendChild(renderer.domElement);
+
+        // --- 辉光后期处理 (Bloom) ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.1;
+        bloomPass.strength = 1.2; // 辉光强度
+        bloomPass.radius = 0.5;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // --- 粒子系统构建 (照片云/树) ---
+        
+        // 1. 生成纹理 (程序化生成，避免加载外部图片)
+        function createParticleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            
+            // 画一个类似Polaroid照片的矩形
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(10, 10, 44, 50);
+            ctx.fillStyle = '#222';
+            ctx.fillRect(14, 14, 36, 36); // 照片内容黑底
+            
+            // 加一点辉光中心
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            grad.addColorStop(0, 'rgba(255,255,255,1)');
+            grad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = grad;
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.fillRect(0,0,64,64);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        // 2. 几何体数据
+        const geometry = new THREE.BufferGeometry();
+        const treePositions = [];
+        const scatterPositions = [];
+        const colors = [];
+        const sizes = [];
+
+        // 颜色池
+        const colorPalette = CONFIG.colors;
+
+        for (let i = 0; i < CONFIG.particleCount; i++) {
+            // --- 树形位置 (螺旋圆锥) ---
+            const p = i / CONFIG.particleCount;
+            const y = -CONFIG.treeHeight / 2 + p * CONFIG.treeHeight;
+            const radius = (1 - p) * CONFIG.treeRadius; // 顶部窄，底部宽
+            const angle = p * 50; // 螺旋圈数
+            
+            const tx = Math.cos(angle) * radius + (Math.random() - 0.5) * 1.5; // 加点随机抖动
+            const tz = Math.sin(angle) * radius + (Math.random() - 0.5) * 1.5;
+            const ty = y + (Math.random() - 0.5) * 2.0;
+
+            treePositions.push(tx, ty, tz);
+
+            // --- 散开位置 (球形随机) ---
+            const sx = (Math.random() - 0.5) * CONFIG.scatterRadius * 2;
+            const sy = (Math.random() - 0.5) * CONFIG.scatterRadius * 2;
+            const sz = (Math.random() - 0.5) * CONFIG.scatterRadius * 1.5;
+            scatterPositions.push(sx, sy, sz);
+
+            // --- 颜色 & 大小 ---
+            const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+            colors.push(color.r, color.g, color.b);
+            sizes.push(Math.random() * 0.8 + 0.2); // 随机大小
+        }
+
+        // 填充 BufferGeometry
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(treePositions, 3));
+        geometry.setAttribute('targetTree', new THREE.Float32BufferAttribute(treePositions, 3));
+        geometry.setAttribute('targetScatter', new THREE.Float32BufferAttribute(scatterPositions, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
+
+        // 3. 材质
+        const material = new THREE.PointsMaterial({
+            size: 1.0,
+            map: createParticleTexture(),
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.9,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending // 辉光叠加关键
+        });
+
+        const particles = new THREE.Points(geometry, material);
+        const particleGroup = new THREE.Group();
+        particleGroup.add(particles);
+        scene.add(particleGroup);
+
+        // --- 装饰：顶部星星 ---
+        const starGeo = new THREE.OctahedronGeometry(1.5, 0);
+        const starMat = new THREE.MeshBasicMaterial({ color: 0xFFD700, wireframe: true });
+        const star = new THREE.Mesh(starGeo, starMat);
+        star.position.y = CONFIG.treeHeight / 2 + 1;
+        particleGroup.add(star);
+
+
+        // --- MediaPipe 逻辑 ---
+        const videoElement = document.getElementById('video-feed');
+        
+        function onResults(results) {
+            document.getElementById('loading').style.display = 'none';
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                STATE.isHandDetected = true;
+                const landmarks = results.multiHandLandmarks[0];
+
+                // 1. 识别：手掌中心与指尖距离 -> 判断开合
+                // 0: Wrist, 9: Middle Finger MCP (Palm center approx), 12: Middle Tip
+                const wrist = landmarks[0];
+                const thumbTip = landmarks[4];
+                const indexTip = landmarks[8];
+                const middleTip = landmarks[12];
+                const ringTip = landmarks[16];
+                const pinkyTip = landmarks[20];
+
+                // 计算指尖到手腕的平均距离
+                const tips = [indexTip, middleTip, ringTip, pinkyTip];
+                let avgDist = 0;
+                tips.forEach(tip => {
+                    avgDist += Math.sqrt(
+                        Math.pow(tip.x - wrist.x, 2) + 
+                        Math.pow(tip.y - wrist.y, 2)
+                    );
+                });
+                avgDist /= 4;
+
+                // 阈值判断 (根据经验值)
+                // 距离大 = 张开手 = Scatter
+                // 距离小 = 握拳 = Tree
+                if (avgDist > 0.35) {
+                    STATE.targetShape = 1; // Scatter
+                } else if (avgDist < 0.25) {
+                    STATE.targetShape = 0; // Tree
+                }
+
+                // 2. 识别：捏合 (Pinch) -> 放大
+                const pinchDist = Math.sqrt(
+                    Math.pow(thumbTip.x - indexTip.x, 2) + 
+                    Math.pow(thumbTip.y - indexTip.y, 2)
+                );
+                
+                if (pinchDist < 0.05) {
+                    STATE.zoomTarget = 2.0; // 放大态
+                } else {
+                    STATE.zoomTarget = 1.0; // 恢复
+                }
+
+                // 3. 识别：手在屏幕X轴位置 -> 旋转
+                // MediaPipe x is 0-1 (left to right)
+                // Map 0-1 to -PI to PI
+                const handX = landmarks[9].x; 
+                STATE.rotationTarget = (handX - 0.5) * 4; // 灵敏度因子 4
+
+            } else {
+                STATE.isHandDetected = false;
+                // 无人时自动慢旋转，恢复树形
+                STATE.targetShape = 0;
+                STATE.zoomTarget = 1.0;
+            }
+        }
+
+        const hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        const cameraUtils = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        cameraUtils.start();
+
+
+        // --- 动画循环 ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // 1. 状态插值 (Smooth Transitions)
+            // 形状因子: 0 (Tree) -> 1 (Scatter)
+            STATE.currentShapeVal = THREE.MathUtils.lerp(STATE.currentShapeVal, STATE.targetShape, delta * 2.0);
+            
+            // 旋转插值
+            if (STATE.isHandDetected) {
+                const currentRot = particleGroup.rotation.y;
+                particleGroup.rotation.y = THREE.MathUtils.lerp(currentRot, -STATE.rotationTarget, delta * 3.0);
+            } else {
+                particleGroup.rotation.y += delta * 0.1; // 待机自动旋转
+            }
+
+            // 缩放插值
+            const currentScale = particleGroup.scale.x;
+            const targetScale = STATE.zoomTarget;
+            const newScale = THREE.MathUtils.lerp(currentScale, targetScale, delta * 3.0);
+            particleGroup.scale.set(newScale, newScale, newScale);
+
+
+            // 2. 粒子位置更新
+            const positions = geometry.attributes.position.array;
+            const targetTree = geometry.attributes.targetTree.array;
+            const targetScatter = geometry.attributes.targetScatter.array;
+
+            for (let i = 0; i < CONFIG.particleCount; i++) {
+                const i3 = i * 3;
+                
+                // 混合目标位置
+                const tx = THREE.MathUtils.lerp(targetTree[i3], targetScatter[i3], STATE.currentShapeVal);
+                const ty = THREE.MathUtils.lerp(targetTree[i3+1], targetScatter[i3+1], STATE.currentShapeVal);
+                const tz = THREE.MathUtils.lerp(targetTree[i3+2], targetScatter[i3+2], STATE.currentShapeVal);
+
+                // 添加一点悬浮动画 (Floating)
+                const floatY = Math.sin(time * 2 + i) * 0.05;
+
+                // 更新当前位置 (带有阻尼效果)
+                positions[i3] += (tx - positions[i3]) * delta * 4.0;
+                positions[i3+1] += (ty + floatY - positions[i3+1]) * delta * 4.0;
+                positions[i3+2] += (tz - positions[i3+2]) * delta * 4.0;
+            }
+            geometry.attributes.position.needsUpdate = true;
+
+            // 3. 星星动画
+            star.rotation.y += delta;
+            star.rotation.z += delta * 0.5;
+            // 星星只在树模式下可见 (Alpha fade)
+            star.material.opacity = 1 - STATE.currentShapeVal;
+            star.material.transparent = true;
+
+            // 渲染
+            composer.render();
+        }
+
+        // 窗口自适应
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+
+    </script>
+</body>
+</html>

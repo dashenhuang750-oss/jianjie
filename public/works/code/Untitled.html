@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Photo Christmas Tree v17.0</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Microsoft YaHei', sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* UI 样式 */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; color: #d4af37; }
+        .elegant-btn {
+            background: rgba(10, 10, 10, 0.85); border: 1px solid rgba(212, 175, 55, 0.4); 
+            color: #d4af37; padding: 10px 15px; cursor: pointer; font-size: 12px;
+            transition: 0.2s; pointer-events: auto; border-radius: 4px; margin: 5px;
+        }
+        .elegant-btn:hover { background: #d4af37; color: #000; }
+        
+        #left-sidebar { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: column; gap: 10px; width: 220px; }
+        #webcam-wrapper { position: absolute; bottom: 20px; right: 20px; width: 180px; height: 135px; border: 1px solid #d4af37; border-radius: 4px; overflow: hidden; background: #000; }
+        #webcam-canvas { width: 100%; height: 100%; transform: scaleX(-1); }
+
+        /* 加载界面 */
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.5s; }
+        .spinner { width: 40px; height: 40px; border: 2px solid rgba(212,175,55,0.1); border-top: 2px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm" } }
+    </script>
+</head>
+<body>
+    <div id="loader"><div class="spinner"></div><div style="color:#d4af37; margin-top:15px; letter-spacing:2px;">正在生成照片树...</div></div>
+    
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div id="left-sidebar">
+            <div style="background:rgba(0,0,0,0.7); padding:15px; border-radius:8px; border:1px solid rgba(212,175,55,0.3); pointer-events:auto;">
+                <h3 style="margin:0 0 10px 0;">照片互动树</h3>
+                <label class="elegant-btn" style="display:block; text-align:center;">
+                    + 批量上传照片
+                    <input type="file" id="file-input" multiple accept="image/*" style="display:none;">
+                </label>
+                <p style="font-size:10px; color:#888; margin-top:10px;">👋 握拳: 变回树 | 张开: 散开照片</p>
+                <p style="font-size:10px; color:#888;">👌 捏合: 放大查看照片</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="webcam-wrapper"><canvas id="webcam-canvas"></canvas></div>
+    <video id="webcam-video" autoplay playsinline muted style="display:none"></video>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+
+        let scene, camera, renderer, composer, clock = new THREE.Clock();
+        let photoGroup = new THREE.Group();
+        let particles = [];
+        let handLandmarker, videoElement;
+        let STATE = { mode: 'TREE', focusTarget: null, rotationY: 0 };
+
+        async function init() {
+            // 基础场景
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x050505);
+            scene.fog = new THREE.FogExp2(0x050505, 0.015);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 10, 70);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            scene.add(photoGroup);
+
+            // 后处理
+            const renderScene = new RenderPass(scene, camera);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.8, 0.4, 0.85);
+            composer = new EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // 预设：如果没照片，生成 100 张默认照片
+            for(let i=0; i<100; i++) {
+                createDefaultPhoto();
+            }
+
+            setupEvents();
+            initMediaPipe();
+            animate();
+            
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => document.getElementById('loader').remove(), 500);
+        }
+
+        function createDefaultPhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#111'; ctx.fillRect(0,0,256,256);
+            ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 10; ctx.strokeRect(10,10,236,236);
+            ctx.fillStyle = '#d4af37'; ctx.font = '30px Arial'; ctx.textAlign = 'center';
+            ctx.fillText("Merry Xmas", 128, 140);
+            addPhotoMesh(canvas.toDataURL());
+        }
+
+        function addPhotoMesh(url) {
+            const texture = new THREE.TextureLoader().load(url);
+            const geometry = new THREE.PlaneGeometry(3, 4); // 相框比例
+            const material = new THREE.MeshStandardMaterial({ 
+                map: texture, 
+                side: THREE.DoubleSide,
+                emissive: 0xffffff,
+                emissiveIntensity: 0.1 
+            });
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            
+            // 圣诞树形坐标计算
+            const h = 40; // 树高
+            const t = Math.random();
+            const angle = t * Math.PI * 15;
+            const r = 15 * (1 - t);
+            const y = t * h - h/2;
+            
+            const treePos = new THREE.Vector3(Math.cos(angle)*r, y, Math.sin(angle)*r);
+            const scatterPos = new THREE.Vector3((Math.random()-0.5)*100, (Math.random()-0.5)*100, (Math.random()-0.5)*100);
+
+            mesh.position.copy(scatterPos);
+            photoGroup.add(mesh);
+            
+            particles.push({
+                mesh: mesh,
+                tree: treePos,
+                scatter: scatterPos,
+                rotSpeed: Math.random() * 2
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            
+            STATE.rotationY += 0.5 * dt;
+            photoGroup.rotation.y = STATE.rotationY;
+
+            particles.forEach(p => {
+                let targetPos = (STATE.mode === 'TREE') ? p.tree : p.scatter;
+                
+                // 如果是聚焦目标
+                if (STATE.mode === 'FOCUS' && p.mesh === STATE.focusTarget) {
+                    // 飞向相机前
+                    const camDir = new THREE.Vector3(0, 0, 40).applyQuaternion(camera.quaternion);
+                    targetPos = new THREE.Vector3().copy(camera.position).add(camDir);
+                    p.mesh.lookAt(camera.position);
+                } else {
+                    p.mesh.position.lerp(targetPos, 0.05);
+                    p.mesh.rotation.y += p.rotSpeed * dt;
+                }
+            });
+
+            composer.render();
+        }
+
+        async function initMediaPipe() {
+            videoElement = document.getElementById('webcam-video');
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+            
+            const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+            handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                baseOptions: { modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`, delegate: "GPU" },
+                runningMode: "VIDEO", numHands: 1
+            });
+            
+            renderWebcamPreview();
+            predictWebcam();
+        }
+
+        function renderWebcamPreview() {
+            const canvas = document.getElementById('webcam-canvas');
+            const ctx = canvas.getContext('2d');
+            function draw() {
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        async function predictWebcam() {
+            const result = handLandmarker.detectForVideo(videoElement, performance.now());
+            if (result.landmarks && result.landmarks.length > 0) {
+                const lm = result.landmarks[0];
+                const pinch = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
+                const open = Math.hypot(lm[8].x - lm[0].x, lm[8].y - lm[0].y);
+
+                if (pinch < 0.05) {
+                    STATE.mode = 'FOCUS';
+                    if(!STATE.focusTarget) STATE.focusTarget = particles[Math.floor(Math.random()*particles.length)].mesh;
+                } else if (open > 0.3) {
+                    STATE.mode = 'SCATTER';
+                    STATE.focusTarget = null;
+                } else {
+                    STATE.mode = 'TREE';
+                    STATE.focusTarget = null;
+                }
+            }
+            requestAnimationFrame(predictWebcam);
+        }
+
+        function setupEvents() {
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            document.getElementById('file-input').addEventListener('change', (e) => {
+                Array.from(e.target.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => addPhotoMesh(ev.target.result);
+                    reader.readAsDataURL(file);
+                });
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

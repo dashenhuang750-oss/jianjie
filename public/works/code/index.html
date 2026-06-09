@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>代码作品合集</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #101828;
+        --muted: #667085;
+        --line: rgba(15, 23, 42, 0.12);
+        --paper: rgba(255, 255, 255, 0.72);
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        color: var(--ink);
+        background:
+          linear-gradient(135deg, rgba(225, 232, 238, 0.84), rgba(250, 252, 255, 0.94)),
+          #eef3f7;
+        font-family: "Inter", "Microsoft YaHei", system-ui, sans-serif;
+      }
+
+      main {
+        width: min(920px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: clamp(32px, 7vw, 72px) 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(30px, 6vw, 48px);
+        line-height: 1.12;
+      }
+
+      p {
+        max-width: 720px;
+        margin: 14px 0 30px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.8;
+      }
+
+      .list {
+        display: grid;
+        gap: 12px;
+      }
+
+      a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 58px;
+        padding: 0 18px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--ink);
+        background: var(--paper);
+        text-decoration: none;
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+      }
+
+      a span {
+        overflow-wrap: anywhere;
+        font-weight: 700;
+      }
+
+      a::after {
+        content: "打开";
+        flex: 0 0 auto;
+        color: #1d4ed8;
+        font-size: 14px;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>代码作品合集</h1>
+      <p>这里保留前端页面、创意代码和学习过程中的可运行实验，便于集中查看与复盘。</p>
+      <div class="list">
+        <a href="./Unt4itled-1.html"><span>Unt4itled-1.html</span></a>
+        <a href="./Unt56itled-1.html"><span>Unt56itled-1.html</span></a>
+        <a href="./Unti.html"><span>Unti.html</span></a>
+        <a href="./Untitled-1grok.html"><span>Untitled-1grok.html</span></a>
+        <a href="./Untitled.html"><span>Untitled.html</span></a>
+        <a href="./圣诞树.html"><span>圣诞树.html</span></a>
+        <a href="./孙.html"><span>孙.html</span></a>
+        <a href="./新建 文本文档.html"><span>新建 文本文档.html</span></a>
+      </div>
+    </main>
+  </body>
+</html>

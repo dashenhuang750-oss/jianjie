@@ -1,0 +1,441 @@
+cat << 'PYTHON_END' > run.py
+import http.server
+import socketserver
+import webbrowser
+import os
+import urllib.request
+import ssl
+
+# 尝试忽略 SSL 错误 (防止 Mac 下载报错)
+try:
+    ssl._create_default_https_context = ssl._create_unverified_context
+except:
+    pass
+
+# 自动下载 Three.js (如果本地没有)
+if not os.path.exists("three.min.js"):
+    print("Downloading three.min.js...")
+    try:
+        urllib.request.urlretrieve("https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js", "three.min.js")
+    except Exception as e: 
+        print(f"Download failed: {e}, will use CDN fallback.")
+
+html_content = """
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eldritch Chaos - Hand Control</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: "SF Pro Display", sans-serif; user-select: none; }
+        
+        /* UI 层 */
+        #layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s;
+        }
+        h1 { 
+            color: #ffaa33; letter-spacing: 10px; font-weight: 100; margin-bottom: 40px; font-size: 36px;
+            text-shadow: 0 0 40px #ff6600;
+        }
+        .btn {
+            padding: 15px 60px; background: transparent; border: 1px solid #ffaa33;
+            color: #ffaa33; border-radius: 2px; cursor: pointer; transition: 0.3s; 
+            font-size: 14px; letter-spacing: 4px; text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(255, 170, 51, 0.2);
+        }
+        .btn:hover { 
+            background: #ffaa33; color: #000; 
+            box-shadow: 0 0 60px rgba(255, 170, 51, 0.8); transform: scale(1.05); 
+        }
+        
+        #status-text { margin-top:20px; color:#843; font-size:10px; letter-spacing:2px; text-transform: uppercase; }
+
+        /* 退出按钮 */
+        #exit-zone {
+            position: absolute; bottom: 0; width: 100%; height: 100px; z-index: 100;
+            display: flex; justify-content: center; align-items: flex-end; padding-bottom: 30px;
+            opacity: 0; transition: opacity 0.5s; pointer-events: none;
+        }
+        #exit-zone.visible { opacity: 1; pointer-events: auto; }
+        
+        #exit-btn {
+            background: rgba(20,10,0,0.8); color: #aa6633; border: 1px solid #553300;
+            padding: 10px 30px; border-radius: 4px; cursor: pointer;
+        }
+        #exit-btn:hover { color: #ffaa33; border-color: #ffaa33; }
+
+        /* 隐藏视频元素 (MediaPipe用) */
+        #hidden-cam { position: absolute; opacity: 0; pointer-events: none; top:0; left:0; }
+        #video { transform: scaleX(-1); }
+        
+        /* 加载提示 */
+        #loading-msg { position: absolute; bottom: 100px; color: #0ff; font-size: 12px; display: none; }
+    </style>
+    
+    <!-- 引入库 (优先本地，失败用CDN) -->
+    <script src="three.min.js"></script>
+    <script>if(!window.THREE) document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
+    
+    <!-- MediaPipe 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+</head>
+<body>
+
+    <div id="layer">
+        <h1>CHAOS MAGIC</h1>
+        <button class="btn" onclick="startApp()">CAST SPELL</button>
+        <div id="status-text">NEURAL LINK REQUIRED</div>
+        <div id="loading-msg">Summoning Spirits (Loading AI)...</div>
+    </div>
+
+    <div id="exit-zone">
+        <button id="exit-btn" onclick="location.reload()">CLOSE PORTAL</button>
+    </div>
+    
+    <div id="hidden-cam"><video id="video" playsinline></video></div>
+
+    <script>
+        let scene, camera, renderer;
+        let rings = [], chaosParticles;
+        let energy = 0, targetEnergy = 0;
+        let audioCtx, filter, gain;
+        let mouseTimer;
+        let hands, cameraObj;
+
+        async function startApp() {
+            document.querySelector('.btn').style.display = 'none';
+            document.getElementById('loading-msg').style.display = 'block';
+            document.getElementById('status-text').innerText = "INITIALIZING CORE...";
+
+            try {
+                // 初始化 3D 世界
+                initWorld(); 
+                initAudio();
+                initInteraction();
+                
+                // 初始化 AI 手势
+                await initMediaPipe();
+
+                // 隐藏 UI 进入沉浸模式
+                document.getElementById('layer').style.opacity = 0;
+                setTimeout(() => document.getElementById('layer').style.display = 'none', 800);
+                try { document.documentElement.requestFullscreen(); } catch(e){}
+            } catch(e) { 
+                console.error(e);
+                alert("Camera/System Error: " + e.message); 
+                location.reload();
+            }
+        }
+
+        // ---------------- MediaPipe 手势核心 ----------------
+        async function initMediaPipe() {
+            const videoElement = document.getElementById('video');
+            
+            hands = new Hands({locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }});
+
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults(onHandsResults);
+
+            cameraObj = new Camera(videoElement, {
+                onFrame: async () => { await hands.send({image: videoElement}); },
+                width: 640, height: 480
+            });
+            
+            await cameraObj.start();
+        }
+
+        function onHandsResults(results) {
+            if (results.multiHandLandmarks.length > 0) {
+                const lm = results.multiHandLandmarks[0];
+                const thumb = lm[4];
+                const index = lm[8];
+                
+                // 计算捏合距离
+                const dist = Math.hypot(thumb.x - index.x, thumb.y - index.y);
+                
+                // 映射逻辑：
+                // 距离 < 0.05 (捏合) -> 能量 0
+                // 距离 > 0.25 (张开) -> 能量 1
+                let val = (dist - 0.04) / 0.22;
+                val = Math.max(0, Math.min(1, val));
+                
+                // 平滑过渡目标能量
+                targetEnergy = val; 
+            } else {
+                // 没手的时候能量慢慢归零
+                targetEnergy = 0;
+            }
+        }
+
+        // ---------------- 视觉效果 (Magic Circle) ----------------
+        function createSparkTex() {
+            const c=document.createElement('canvas'); c.width=32; c.height=32;
+            const x=c.getContext('2d');
+            x.fillStyle='#ffaa33'; x.beginPath(); x.arc(16,16,2,0,6.28); x.fill();
+            const g=x.createRadialGradient(16,16,0,16,16,16);
+            g.addColorStop(0,'rgba(255,200,50,1)'); g.addColorStop(0.5,'rgba(255,100,0,0.2)'); g.addColorStop(1,'rgba(0,0,0,0)');
+            x.fillStyle=g; x.fillRect(0,0,32,32);
+            return new THREE.CanvasTexture(c);
+        }
+
+        function initWorld() {
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.02);
+            
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 14); 
+            camera.lookAt(0, 0, 0);
+            
+            renderer = new THREE.WebGLRenderer({antialias:true});
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.body.appendChild(renderer.domElement);
+
+            const tex = createSparkTex();
+            const mat = new THREE.PointsMaterial({
+                size: 0.25, map: tex, color: 0xffaa33,
+                blending: THREE.AdditiveBlending, depthWrite: false, 
+                transparent: true, opacity: 0
+            });
+
+            // 构建魔法阵环 (Rings)
+            createRing(5.5, 1200, 'circle', mat, 0.005, 0.0);
+            createRing(4.5, 1500, 'spiro', mat, -0.01, 0.1);
+            createRing(3.5, 800, 'square', mat, 0.02, 0.2);
+            createRing(3.5, 800, 'square', mat, -0.02, 0.25, Math.PI/4);
+            createRing(1.8, 400, 'circle', mat, 0.05, 0.4);
+
+            // 环境混沌粒子
+            initChaosParticles(tex);
+
+            animate();
+        }
+
+        function createRing(r, count, type, mat, speed, delay, rot=0) {
+            const pos=[];
+            const basePos=[]; 
+            
+            for(let i=0; i<count; i++) {
+                const t=i/count, a=t*Math.PI*2;
+                let x,y;
+                if(type==='circle') { x=Math.cos(a)*r; y=Math.sin(a)*r; }
+                else if(type==='square') {
+                    if(t<0.25){x=r; y=r*(1-8*t);} else if(t<0.5){x=r*(1-8*(t-0.25)); y=-r;}
+                    else if(t<0.75){x=-r; y=-r*(1-8*(t-0.5));} else{x=-r*(1-8*(t-0.75)); y=r;}
+                }
+                else { const R=r, k=r*0.3, h=2.4; x=(R-k)*Math.cos(a)+h*Math.cos(((R-k)/k)*a); y=(R-k)*Math.sin(a)-h*Math.sin(((R-k)/k)*a); }
+                
+                x += (Math.random()-0.5)*0.1;
+                y += (Math.random()-0.5)*0.1;
+                
+                pos.push(x,y,0);
+                basePos.push(x,y,0);
+            }
+            
+            const geo = new THREE.BufferGeometry(); 
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); 
+            geo.setDrawRange(0,0);
+            
+            const p = new THREE.Points(geo, mat.clone()); 
+            p.rotation.z=rot;
+            p.userData={speed:speed, delay:delay, count:count, basePos: basePos};
+            scene.add(p); rings.push(p);
+        }
+
+        function initChaosParticles(tex) {
+            const count = 2000;
+            const pos = [], vels = [];
+            for(let i=0; i<count; i++) {
+                pos.push((Math.random()-0.5)*20, (Math.random()-0.5)*20, (Math.random()-0.5)*5);
+                vels.push(0,0,0);
+            }
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            const mat = new THREE.PointsMaterial({
+                size: 0.3, map: tex, color: 0xffcc44,
+                blending: THREE.AdditiveBlending, transparent: true, opacity: 0
+            });
+            chaosParticles = new THREE.Points(geo, mat);
+            chaosParticles.userData = { vels: vels };
+            scene.add(chaosParticles);
+        }
+
+        function updateChaos() {
+            const pos = chaosParticles.geometry.attributes.position.array;
+            const vels = chaosParticles.userData.vels;
+            
+            // 能量越高，粒子越明显
+            chaosParticles.material.opacity = Math.max(0.2, energy); 
+
+            for(let i=0; i<2000; i++) {
+                const idx = i*3;
+                
+                // 重生逻辑
+                if(pos[idx+1] < -10 || Math.random() < 0.01) {
+                    if(energy > 0.1) {
+                        // 在圆环附近重生
+                        const angle = Math.random() * 6.28;
+                        const r = 3 + Math.random() * 4;
+                        pos[idx] = Math.cos(angle)*r;
+                        pos[idx+1] = Math.sin(angle)*r;
+                        pos[idx+2] = (Math.random()-0.5)*2;
+                        
+                        // 速度随能量增加
+                        const burst = energy * 0.2;
+                        vels[idx] = (Math.random()-0.5)*burst;
+                        vels[idx+1] = (Math.random()-0.5)*burst;
+                        vels[idx+2] = (Math.random()-0.5)*burst;
+                    } else {
+                        // 没能量时隐藏在远处
+                        pos[idx] = 9999; 
+                    }
+                } else {
+                    pos[idx] += vels[idx];
+                    pos[idx+1] += vels[idx+1];
+                    pos[idx+2] += vels[idx+2];
+                    
+                    // 重力/吸力
+                    vels[idx+1] -= 0.002 * (0.5 + energy); 
+                    
+                    // 扰动
+                    vels[idx] += (Math.random()-0.5)*0.01 * energy;
+                    
+                    // 高能量时的扩散效果
+                    if(energy > 0.8) {
+                        vels[idx] *= 1.05;
+                        vels[idx+1] *= 1.05;
+                    }
+                }
+            }
+            chaosParticles.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 能量跟随手势
+            energy += (targetEnergy - energy) * 0.08;
+
+            rings.forEach(ring => {
+                const d = ring.userData;
+                const basePos = d.basePos;
+                const pos = ring.geometry.attributes.position.array;
+                
+                // 能量决定圆环完整度
+                const prog = Math.max(0, Math.min(1, (energy-d.delay)/(1-d.delay)));
+                ring.geometry.setDrawRange(0, Math.floor(d.count*prog));
+                
+                // 能量决定旋转速度
+                ring.rotation.z += d.speed * (1 + energy * 8);
+                ring.material.opacity = prog;
+                
+                // 能量抖动效果 (Electric Jitter)
+                if(energy > 0.05) {
+                    const jitter = 0.05 * energy;
+                    for(let i=0; i<d.count; i++) {
+                        const idx = i*3;
+                        pos[idx] = basePos[idx] + (Math.random()-0.5) * jitter;
+                        pos[idx+1] = basePos[idx+1] + (Math.random()-0.5) * jitter;
+                    }
+                    ring.geometry.attributes.position.needsUpdate = true;
+                }
+            });
+
+            updateChaos();
+            updateAudio(energy);
+            
+            // 摄像机震动
+            if(energy > 0.8) { 
+                const shake = (energy - 0.8) * 0.2;
+                camera.position.x = (Math.random()-0.5) * shake; 
+                camera.position.y = (Math.random()-0.5) * shake; 
+            } else { 
+                camera.position.x = 0; camera.position.y = 0; 
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // ---------------- 音频系统 (Procedural Audio) ----------------
+        function initAudio() {
+            if(audioCtx) return;
+            const AC=window.AudioContext||window.webkitAudioContext; audioCtx=new AC();
+            
+            // 低音嗡鸣
+            const osc=audioCtx.createOscillator(); osc.type='sawtooth'; osc.frequency.value=50;
+            filter=audioCtx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=0;
+            gain=audioCtx.createGain(); gain.gain.value=0;
+            
+            // 粒子噪音
+            const bufSize = audioCtx.sampleRate; const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+            const data = buf.getChannelData(0);
+            for(let i=0;i<bufSize;i++) data[i]=(Math.random()*2-1)*0.5;
+            const noise = audioCtx.createBufferSource(); noise.buffer=buf; noise.loop=true;
+            const noiseGain = audioCtx.createGain(); noiseGain.gain.value=0;
+
+            osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+            noise.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+            osc.start(); noise.start();
+            window.sparkGain = noiseGain;
+        }
+
+        function updateAudio(val) {
+            if(!audioCtx) return;
+            // 频率随能量升高
+            filter.frequency.setTargetAtTime(50 + val*3000, audioCtx.currentTime, 0.1);
+            gain.gain.setTargetAtTime(val * 0.3, audioCtx.currentTime, 0.1);
+            if(window.sparkGain) window.sparkGain.gain.setTargetAtTime(val > 0.1 ? val*0.1 : 0, audioCtx.currentTime, 0.1);
+        }
+
+        function initInteraction() {
+            const trigger = document.getElementById('exit-zone');
+            document.addEventListener('mousemove', () => {
+                if(document.fullscreenElement) {
+                    trigger.classList.add('visible');
+                    clearTimeout(mouseTimer);
+                    mouseTimer = setTimeout(() => trigger.classList.remove('visible'), 2000);
+                }
+            });
+            window.addEventListener('keydown', e => { if(e.key=='q') location.reload(); });
+        }
+        
+        window.onresize = () => { 
+            camera.aspect=window.innerWidth/window.innerHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(window.innerWidth, window.innerHeight); 
+        };
+    </script>
+</body>
+</html>
+"""
+
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print("✅ Magic Circle System Ready.")
+print("OPENING PORTAL...")
+webbrowser.open("http://localhost:8000")
+
+PORT = 8000
+Handler = http.server.SimpleHTTPRequestHandler
+with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    print(f"Running on http://localhost:{PORT}")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nSystem shutdown.")
+PYTHON_END

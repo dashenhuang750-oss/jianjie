@@ -180,8 +180,29 @@ module.exports = {
       ],
       works: [
         {
-          href: "/works/粒子.html",
-          linkLabel: "粒子.html"
+          title: "交互作品与代码实验",
+          role: "个人作品 / MATLAB / 前端代码实验",
+          description: "整理本地交互页面、MATLAB 可视化尝试和代码实验作品，把零散练习沉淀成可以直接打开、浏览和复盘的作品入口。",
+          contributions: [
+            "粒子作品侧重动态视觉、页面交互和空间氛围表达。",
+            "MATLAB 合集收纳数学建模、可视化和仿真实验相关页面。",
+            "代码合集保留前端页面、创意实验和学习过程中的可运行成果。"
+          ],
+          tags: ["Particle", "MATLAB", "Code", "Interactive", "Visualization"],
+          links: [
+            {
+              href: "/works/粒子.html",
+              label: "粒子作品"
+            },
+            {
+              href: "/works/matlab/index.html",
+              label: "MATLAB 合集"
+            },
+            {
+              href: "/works/code/index.html",
+              label: "代码合集"
+            }
+          ]
         }
       ]
     },

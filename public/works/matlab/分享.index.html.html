@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黄文浩专属页面</title>
+    <meta name="description" content="黄文浩好帅 - 专属特效页面">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #000428, #004e92);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+            padding: 20px;
+        }
+        
+        .text-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .char {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 10px currentColor;
+            animation: jump 1.5s infinite alternate, glow 2s infinite alternate;
+            display: inline-block;
+            transform-origin: bottom;
+        }
+        
+        .char:nth-child(1) { animation-delay: 0s; color: #FF5252; }
+        .char:nth-child(2) { animation-delay: 0.1s; color: #FF9800; }
+        .char:nth-child(3) { animation-delay: 0.2s; color: #FFEB3B; }
+        .char:nth-child(4) { animation-delay: 0.3s; color: #4CAF50; }
+        .char:nth-child(5) { animation-delay: 0.4s; color: #2196F3; }
+        .char:nth-child(6) { animation-delay: 0.5s; color: #9C27B0; }
+        
+        @keyframes jump {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.2); }
+        }
+        
+        @keyframes glow {
+            0%, 100% {
+                text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+                opacity: 1;
+            }
+            50% {
+                text-shadow: 0 0 20px currentColor, 0 0 30px currentColor, 0 0 40px currentColor;
+                opacity: 0.8;
+            }
+        }
+        
+        .subtitle {
+            font-size: 1.8rem;
+            color: white;
+            margin-top: 30px;
+            animation: pulse 3s infinite;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        
+        .share-buttons {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            padding: 12px 25px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .share-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+            z-index: 1;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .char { font-size: 3.5rem; }
+            .subtitle { font-size: 1.4rem; }
+            .share-buttons { flex-direction: column; align-items: center; }
+        }
+        
+        @media (max-width: 480px) {
+            .char { font-size: 2.5rem; }
+            .subtitle { font-size: 1.2rem; }
+            .text-container { gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="text-container">
+            <div class="char">黄</div>
+            <div class="char">文</div>
+            <div class="char">浩</div>
+            <div class="char">好</div>
+            <div class="char">帅</div>
+            <div class="char">!</div>
+        </div>
+        <div class="subtitle">✨ 全场最帅，无人能敌 ✨</div>
+        
+        <div class="share-buttons">
+            <button class="share-btn" onclick="copyLink()">📋 复制链接</button>
+            <button class="share-btn" onclick="sharePage()">📤 分享给朋友</button>
+            <button class="share-btn" onclick="downloadPage()">💾 下载页面</button>
+        </div>
+    </div>
+
+    <script>
+        // 创建背景粒子
+        function createParticles() {
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 5 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                const colors = ['#FF5252', '#FF9800', '#FFEB3B', '#4CAF50', '#2196F3', '#9C27B0'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+                particle.style.animationDuration = `${10 + Math.random() * 10}s`;
+                
+                document.body.appendChild(particle);
+            }
+        }
+        
+        // 复制链接功能
+        function copyLink() {
+            const currentUrl = window.location.href;
+            navigator.clipboard.writeText(currentUrl).then(() => {
+                alert('链接已复制到剪贴板！\n发送这个链接给朋友即可分享');
+            }).catch(() => {
+                // 备用方案
+                prompt('请手动复制以下链接：', currentUrl);
+            });
+        }
+        
+        // 分享功能
+        function sharePage() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '黄文浩专属页面',
+                    text: '快来看这个超酷的页面！',
+                    url: window.location.href
+                });
+            } else {
+                copyLink();
+            }
+        }
+        
+        // 下载页面功能
+        function downloadPage() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '黄文浩专属页面.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // 初始化
+        window.addEventListener('load', () => {
+            createParticles();
+            
+            // 如果是在本地文件，显示部署提示
+            if (window.location.protocol === 'file:') {
+                setTimeout(() => {
+                    alert('💡 提示：要分享给朋友，请使用Netlify部署获得在线网址！\n访问：https://app.netlify.com/drop');
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html>

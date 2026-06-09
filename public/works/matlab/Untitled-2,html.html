@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>奥术之门 V5：最终稳定与兼容版</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Arial, sans-serif; }
+        canvas { display: block; }
+
+        /* 调试和状态信息 */
+        #debug-console {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #ffcc00; background: rgba(0,0,0,0.8); padding: 20px;
+            border: 2px solid #ffcc00; border-radius: 8px; max-width: 80%; z-index: 999;
+            pointer-events: none; text-align: center; box-shadow: 0 0 20px rgba(255,204,0,0.5);
+            font-size: 1.1em;
+        }
+        #input-video { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; }
+        #ui-layer {
+            position: absolute; bottom: 20px; width: 100%; text-align: center; color: #aaddff;
+            text-shadow: 0 0 15px #0099ff, 0 0 25px rgba(0,153,255,0.7); pointer-events: none; z-index: 10;
+        }
+        .hud-text { font-size: 28px; font-weight: bold; margin-bottom: 5px; letter-spacing: 1px; }
+        .sub-text { font-size: 16px; opacity: 0.8; line-height: 1.5; }
+        .hand-label {
+            position: absolute; padding: 5px 10px; background: rgba(0, 0, 0, 0.7);
+            border-radius: 5px; color: white; font-size: 12px; z-index: 10; pointer-events: none;
+            text-shadow: none; border: 1px solid rgba(255,255,255,0.3);
+        }
+    </style>
+
+    <script src="https://unpkg.com/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@mediapipe/hands@0.4/hands.js" crossorigin="anonymous"></script>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="debug-console">系统初始化中...<br>请在弹窗中允许摄像头权限，然后等待模型加载。</div>
+
+    <div id="ui-layer">
+        <div class="hud-text" id="status-text">奥术之门：待命中</div>
+        <div class="sub-text">
+            **移动魔法阵:** 跟随食指尖移动（单手）或双手中点移动（双手）。<br>
+            **能量强度:** 捏合食指和拇指的距离越小，充能强度越高！
+        </div>
+    </div>
+
+    <div id="hand-labels"></div>
+
+    <video id="input-video"></video>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- 全局变量 ---
+        const debugConsole = document.getElementById('debug-console');
+        const statusText = document.getElementById('status-text');
+        const handLabelsContainer = document.getElementById('hand-labels');
+
+        let scene, camera, renderer, composer;
+        let magicGroup, rings = [], dynamicElements = [], particles, coreLight;
+        
+        let targetPosX = 0, targetPosY = 0; 
+        let targetRotX = 0, targetRotY = 0; 
+        
+        let globalScale = 1.0;
+        let time = 0;
+        let chargeFactor = 0.0; 
+
+        // 优化：更高的映射系数，让移动更灵敏
+        const SCREEN_MAP_FACTOR = 30; 
+
+        const COLOR_IDLE = new THREE.Color(0.1, 0.8, 2.0);
+        const COLOR_CHARGING = new THREE.Color(3.0, 0.5, 0.1); 
+        let currentColor = COLOR_IDLE.clone(); 
+
+        let handLandmarks = {}; 
+        const THUMB_TIP = 4;
+        const INDEX_FINGER_TIP = 8;
+        
+        function log(msg, isError = false) {
+            debugConsole.innerHTML = msg;
+            debugConsole.style.color = isError ? 'red' : '#ffcc00';
+            debugConsole.style.borderColor = isError ? 'red' : '#ffcc00';
+            if (!isError) {
+                setTimeout(() => { debugConsole.style.display = 'none'; }, 2000);
+            }
+        }
+
+        // --- 1. Three.js 初始化 ---
+        function initThree() {
+            try {
+                scene = new THREE.Scene();
+                scene.fog = new THREE.FogExp2(0x000000, 0.05);
+
+                camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+                camera.position.set(0, 0, 20);
+
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                document.body.appendChild(renderer.domElement);
+
+                const renderScene = new RenderPass(scene, camera);
+                const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+                bloomPass.strength = 3.0; bloomPass.radius = 0.8; bloomPass.threshold = 0;
+                composer = new EffectComposer(renderer);
+                composer.addPass(renderScene);
+                composer.addPass(bloomPass);
+
+                createMagicCircle();
+                createParticles();
+                createCoreLight();
+                createFloorGrid(); 
+
+                // 修复 onResize is not defined 错误
+                window.addEventListener('resize', onResize); 
+                
+                log("图形引擎启动成功...");
+                animate();
+                
+            } catch (e) {
+                log("Three.js 初始化失败: " + e.message, true);
+            }
+        }
+
+        // --- 2. 几何体创建函数 ---
+        function createMagicCircle() {
+            magicGroup = new THREE.Group();
+            scene.add(magicGroup);
+            const lineMat = new THREE.LineBasicMaterial({ color: COLOR_IDLE, linewidth: 2 });
+            const pointMat = new THREE.PointsMaterial({ color: COLOR_IDLE, size: 0.2, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.8 });
+            const geo1 = new THREE.TorusGeometry(8, 0.1, 32, 200);
+            const ring1 = new THREE.LineSegments(new THREE.WireframeGeometry(geo1), lineMat.clone());
+            ring1.userData = { speed: 0.01, dir: 1, type: 'ring' };
+            magicGroup.add(ring1);
+            rings.push(ring1);
+            const geo2 = new THREE.TorusKnotGeometry(5, 0.15, 128, 32, 3, 2);
+            const ring2 = new THREE.LineSegments(new THREE.WireframeGeometry(geo2), lineMat.clone());
+            ring2.rotation.x = Math.PI / 2; ring2.scale.y = 0.2;
+            ring2.userData = { speed: 0.02, dir: -1, type: 'ring' };
+            magicGroup.add(ring2); rings.push(ring2);
+            const geo3 = new THREE.IcosahedronGeometry(2, 0);
+            const ring3 = new THREE.Points(geo3, pointMat.clone());
+            ring3.userData = { speed: 0.03, dir: 1, type: 'points' };
+            magicGroup.add(ring3); rings.push(ring3);
+            const helixPoints = [];
+            for(let i=0; i<100; i++) {
+                const angle = i * 0.3;
+                const r = 3 + Math.sin(angle * 5) * 0.5;
+                helixPoints.push(new THREE.Vector3(r * Math.cos(angle), i * 0.08 - 4, r * Math.sin(angle)));
+            }
+            const helixGeo = new THREE.BufferGeometry().setFromPoints(helixPoints);
+            const helix = new THREE.Line(helixGeo, lineMat.clone());
+            helix.userData = { speed: 0.05, dir: 1, type: 'helix' };
+            magicGroup.add(helix); dynamicElements.push(helix);
+        }
+
+        function createParticles() {
+            const geom = new THREE.BufferGeometry();
+            const pos = []; const vel = []; const count = 2000;
+            for(let i=0; i<count; i++) {
+                const radius = Math.random() * 12 + 2; const angle = Math.random() * Math.PI * 2;
+                pos.push(radius * Math.cos(angle), (Math.random()-0.5)*20, radius * Math.sin(angle));
+                vel.push(0, 0.05 + Math.random()*0.1, 0);
+            }
+            geom.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            geom.setAttribute('velocity', new THREE.Float32BufferAttribute(vel, 3));
+            const mat = new THREE.PointsMaterial({ color: COLOR_IDLE, size: 0.15, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.6 });
+            particles = new THREE.Points(geom, mat);
+            magicGroup.add(particles);
+        }
+        
+        function createCoreLight() {
+            const geo = new THREE.SphereGeometry(1.5, 32, 32);
+            const mat = new THREE.MeshBasicMaterial({ color: COLOR_IDLE });
+            coreLight = new THREE.Mesh(geo, mat);
+            magicGroup.add(coreLight);
+        }
+
+        function createFloorGrid() {
+            const gridHelper = new THREE.GridHelper(60, 60, 0x1a1a1a, 0x0a0a0a);
+            gridHelper.position.y = -8; 
+            scene.add(gridHelper);
+        }
+
+        // --- 3. 动画循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            currentColor.copy(COLOR_IDLE).lerp(COLOR_CHARGING, chargeFactor);
+            const speedMult = 1.0 + chargeFactor * 5.0; 
+            const particleChargeFactor = 1.0 + chargeFactor * 2.0;
+
+            rings.forEach(element => {
+                if(element.material) element.material.color.copy(currentColor);
+                element.rotation.z += element.userData.speed * element.userData.dir * speedMult;
+            });
+
+            // 运动插值 (高灵敏度设置)
+            magicGroup.scale.set(globalScale, globalScale, globalScale);
+            
+            magicGroup.position.x += (targetPosX - magicGroup.position.x) * 0.3; 
+            magicGroup.position.y += (targetPosY - magicGroup.position.y) * 0.3;
+            magicGroup.rotation.x += (targetRotX - magicGroup.rotation.x) * 0.15;
+            magicGroup.rotation.y += (targetRotY - magicGroup.rotation.y) * 0.15;
+
+            composer.render();
+        }
+
+        // --- 4. 窗口大小改变响应 (修复 onResize 丢失问题) ---
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- 5. MediaPipe 手势识别逻辑 ---
+        async function setupHandTracking() {
+            const videoElement = document.getElementById('input-video');
+            
+            // *** 核心修复：locateFile 指向 UNPKG CDN 以确保模型资产正确加载 ***
+            const hands = new Hands({locateFile: (file) => {
+                return `https://unpkg.com/@mediapipe/hands@0.4/${file}`;
+            }});
+            
+            // 优化：降低置信度，提高灵敏度
+            hands.setOptions({
+                maxNumHands: 2, 
+                modelComplexity: 1, 
+                minDetectionConfidence: 0.5, 
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults(onResults);
+            
+            try {
+                log("正在请求摄像头权限...");
+                const camera = new Camera(videoElement, {
+                    onFrame: async () => { await hands.send({image: videoElement}); },
+                    width: 640, height: 480
+                });
+                await camera.start();
+                log("摄像头已启动。请等待模型加载...");
+            } catch (e) {
+                log("摄像头启动失败: " + e.message + "<br>请检查浏览器权限。", true);
+            }
+        }
+
+        function onResults(results) {
+            handLandmarks = {};
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                results.multiHandedness.forEach((handedness, index) => {
+                    const handType = handedness.label;
+                    handLandmarks[handType] = results.multiHandLandmarks[index];
+                });
+
+                if (Object.keys(handLandmarks).length === 1) {
+                    handleSingleHand(handLandmarks['Left'] || handLandmarks['Right']);
+                } else if (Object.keys(handLandmarks).length === 2) {
+                    handleTwoHands(handLandmarks['Left'], handLandmarks['Right']);
+                }
+                updateHandLabels(results.multiHandLandmarks, results.multiHandedness);
+            } else {
+                targetPosX = 0; targetPosY = 0; targetRotX = 0; targetRotY = 0;
+                globalScale = 1.0; chargeFactor = 0.0;
+                statusText.innerText = "奥术之门：待命中";
+                statusText.style.color = "#aaddff";
+                handLabelsContainer.innerHTML = '';
+            }
+        }
+
+        // --- 6. 交互逻辑 ---
+        function handleSingleHand(hand) {
+            const wrist = hand[0]; const indexTip = hand[INDEX_FINGER_TIP];
+            const x = (1 - indexTip.x) * 2 - 1; const y = -(indexTip.y * 2 - 1);
+            targetPosX = x * SCREEN_MAP_FACTOR * 0.5; targetPosY = y * SCREEN_MAP_FACTOR * 0.5;
+            targetRotY = (1 - wrist.x) * 2 - 1; targetRotX = -(wrist.y * 2 - 1);
+            const pinchDistance = getPinchDistance(hand);
+            chargeFactor = THREE.MathUtils.clamp(1.0 - (pinchDistance - 0.03) / (0.2 - 0.03), 0.0, 1.0);
+            statusText.innerText = `单手控制 | 强度: ${Math.round(chargeFactor * 100)}%`;
+            statusText.style.color = chargeFactor > 0.5 ? COLOR_CHARGING.getStyle() : COLOR_IDLE.getStyle();
+            globalScale = 1.0;
+        }
+
+        function handleTwoHands(leftHand, rightHand) {
+            const leftWrist = leftHand[0]; const rightWrist = rightHand[0];
+            const centerX = (leftWrist.x + rightWrist.x) / 2; const centerY = (leftWrist.y + rightWrist.y) / 2;
+            const x = (1 - centerX) * 2 - 1; const y = -(centerY * 2 - 1);
+            targetPosX = x * SCREEN_MAP_FACTOR * 0.5; targetPosY = y * SCREEN_MAP_FACTOR * 0.5;
+            const handDistance = Math.sqrt(
+                Math.pow(leftWrist.x - rightWrist.x, 2) + Math.pow(leftWrist.y - rightWrist.y, 2)
+            );
+            globalScale = THREE.MathUtils.clamp(handDistance * 3.0, 0.5, 2.0);
+            const angle = Math.atan2(rightWrist.y - leftWrist.y, rightWrist.x - leftWrist.x);
+            targetRotY = (angle / Math.PI) * 2.0; targetRotX = 0;
+            const avgPinch = (getPinchDistance(leftHand) + getPinchDistance(rightHand)) / 2;
+            chargeFactor = THREE.MathUtils.clamp(1.0 - (avgPinch - 0.03) / (0.2 - 0.03), 0.0, 1.0);
+            statusText.innerText = `双手法师 | 强度: ${Math.round(chargeFactor * 100)}% | 缩放: ${Math.round(globalScale * 100)}%`;
+            statusText.style.color = chargeFactor > 0.5 ? COLOR_CHARGING.getStyle() : COLOR_IDLE.getStyle();
+        }
+
+        function getPinchDistance(hand) {
+             const thumbTip = hand[THUMB_TIP];
+             const indexTip = hand[INDEX_FINGER_TIP];
+             return Math.sqrt(
+                Math.pow(thumbTip.x - indexTip.x, 2) + Math.pow(thumbTip.y - indexTip.y, 2)
+            );
+        }
+
+        function updateHandLabels(multiHandLandmarks, multiHandedness) {
+            handLabelsContainer.innerHTML = '';
+            multiHandedness.forEach((handedness, index) => {
+                const hand = multiHandLandmarks[index];
+                const wrist = hand[0];
+                const x = wrist.x * window.innerWidth;
+                const y = wrist.y * window.innerHeight;
+                const label = document.createElement('div');
+                label.className = 'hand-label';
+                label.style.left = `${x}px`;
+                label.style.top = `${y}px`;
+                label.innerText = `${handedness.label}手`;
+                handLabelsContainer.appendChild(label);
+            });
+        }
+
+        // --- 7. 启动流程 ---
+        window.onload = startApp;
+        async function startApp() {
+            initThree();
+            await setupHandTracking();
+            log("奥术之门已就绪！挥动你的手！");
+        }
+    </script>
+</body>
+</html>

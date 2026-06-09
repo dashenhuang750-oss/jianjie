@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Photo Christmas Tree v17.0 - Final Fix</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        #canvas-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        /* UI 层 */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; color: #d4af37; }
+        .elegant-btn {
+            background: rgba(15, 15, 15, 0.9); border: 1px solid rgba(212, 175, 55, 0.4); 
+            color: #d4af37; padding: 12px 20px; cursor: pointer; font-size: 13px;
+            transition: 0.3s; pointer-events: auto; border-radius: 4px; letter-spacing: 1px;
+        }
+        .elegant-btn:hover { background: #d4af37; color: #000; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
+        
+        #left-sidebar { position: absolute; top: 30px; left: 30px; display: flex; flex-direction: column; gap: 15px; width: 240px; }
+        .info-panel { background: rgba(5, 5, 5, 0.85); padding: 20px; border-radius: 8px; border: 1px solid rgba(212,175,55,0.3); backdrop-filter: blur(10px); pointer-events: auto; }
+        
+        #webcam-wrapper { position: absolute; bottom: 30px; right: 30px; width: 200px; height: 150px; border: 1px solid #d4af37; border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        #webcam-canvas { width: 100%; height: 100%; transform: scaleX(-1); }
+
+        /* 加载界面 */
+        #loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.8s ease-in-out; }
+        .spinner { width: 50px; height: 50px; border: 2px solid rgba(212,175,55,0.1); border-top: 2px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/+esm" } }
+    </script>
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+        <div style="color:#d4af37; margin-top:20px; letter-spacing:4px; font-size:12px;">PHOTO TREE INITIALIZING...</div>
+    </div>
+    
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div id="left-sidebar">
+            <div class="info-panel">
+                <h2 style="margin:0 0 15px 0; font-size:18px; text-align:center;">🎄 照片互动圣诞树</h2>
+                <label class="elegant-btn" style="display:block; text-align:center; margin-bottom:15px;">
+                    ✨ 批量上传照片
+                    <input type="file" id="file-input" multiple accept="image/*" style="display:none;">
+                </label>
+                <div style="font-size:11px; color:#aaa; line-height:1.8;">
+                    <div style="color:#d4af37; margin-bottom:5px; font-weight:bold;">手势说明：</div>
+                    ✊ <b>握拳：</b> 聚合为圣诞树形状<br>
+                    ✋ <b>张开：</b> 照片如星云般散开<br>
+                    👌 <b>捏合：</b> 随机抽取一张照片放大查看
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="webcam-wrapper"><canvas id="webcam-canvas"></canvas></div>
+    <video id="webcam-video" autoplay playsinline muted style="display:none"></video>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
+
+        let scene, camera, renderer, composer, clock = new THREE.Clock();
+        let photoGroup = new THREE.Group();
+        let particles = [];
+        let handLandmarker, videoElement;
+        let STATE = { mode: 'TREE', focusTarget: null, rotationY: 0 };
+
+        async function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020202);
+            scene.fog = new THREE.FogExp2(0x020202, 0.012);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 80);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ReinhardToneMapping;
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            scene.add(photoGroup);
+
+            // 高端后处理
+            const renderScene = new RenderPass(scene, camera);
+            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.0, 0.4, 0.8);
+            composer = new EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // 预设：生成默认照片集
+            for(let i=0; i<60; i++) {
+                createDefaultPhoto(i);
+            }
+
+            setupEvents();
+            await initMediaPipe();
+            animate();
+            
+            const loader = document.getElementById('loader');
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 800);
+        }
+
+        function createDefaultPhoto(index) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            // 绘制深色背景和金色边框
+            ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,512,512);
+            ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 20; ctx.strokeRect(10,10,492,492);
+            
+            // 绘制节日文字
+            ctx.fillStyle = '#d4af37';
+            ctx.font = 'bold 50px Arial'; ctx.textAlign = 'center';
+            ctx.fillText("MERRY", 256, 230);
+            ctx.fillText("CHRISTMAS", 256, 310);
+            
+            addPhotoMesh(canvas.toDataURL());
+        }
+
+        function addPhotoMesh(url) {
+            const texture = new THREE.TextureLoader().load(url);
+            texture.colorSpace = THREE.SRGBColorSpace;
+            
+            // 创建带厚度的相框
+            const frameGeo = new THREE.BoxGeometry(4.2, 5.2, 0.2);
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.2 });
+            const frame = new THREE.Mesh(frameGeo, frameMat);
+
+            const photoGeo = new THREE.PlaneGeometry(3.8, 4.8);
+            const photoMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+            const photo = new THREE.Mesh(photoGeo, photoMat);
+            photo.position.z = 0.11; // 贴在相框正面
+            
+            const group = new THREE.Group();
+            group.add(frame);
+            group.add(photo);
+            
+            // 圣诞树算法坐标
+            const h = 50; 
+            const t = Math.random();
+            const angle = t * Math.PI * 18;
+            const r = 20 * (1 - t);
+            const y = t * h - h/2;
+            
+            const treePos = new THREE.Vector3(Math.cos(angle)*r, y, Math.sin(angle)*r);
+            const scatterPos = new THREE.Vector3((Math.random()-0.5)*120, (Math.random()-0.5)*120, (Math.random()-0.5)*120);
+
+            group.position.copy(scatterPos);
+            photoGroup.add(group);
+            
+            particles.push({
+                mesh: group,
+                tree: treePos,
+                scatter: scatterPos,
+                rotSpeed: (Math.random() - 0.5) * 1.5
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            
+            STATE.rotationY += 0.4 * dt;
+            photoGroup.rotation.y = STATE.rotationY;
+
+            particles.forEach(p => {
+                let targetPos = (STATE.mode === 'TREE') ? p.tree : p.scatter;
+                
+                if (STATE.mode === 'FOCUS' && p.mesh === STATE.focusTarget) {
+                    // 飞向相机前方
+                    const offset = new THREE.Vector3(0, 0, 40).applyQuaternion(camera.quaternion);
+                    targetPos = new THREE.Vector3().copy(camera.position).add(offset);
+                    p.mesh.lookAt(camera.position);
+                } else {
+                    p.mesh.position.lerp(targetPos, 0.06);
+                    if(STATE.mode === 'SCATTER') {
+                        p.mesh.rotation.y += p.rotSpeed * dt;
+                        p.mesh.rotation.x += p.rotSpeed * 0.5 * dt;
+                    } else {
+                        p.mesh.rotation.set(0, 0, 0);
+                    }
+                }
+            });
+
+            composer.render();
+        }
+
+        async function initMediaPipe() {
+            videoElement = document.getElementById('webcam-video');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                videoElement.srcObject = stream;
+            } catch (err) {
+                console.warn("Camera access denied");
+                return;
+            }
+            
+            const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+            handLandmarker = await HandLandmarker.createFromOptions(vision, {
+                baseOptions: { 
+                    modelAssetPath: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`, 
+                    delegate: "GPU" 
+                },
+                runningMode: "VIDEO", numHands: 1
+            });
+            
+            renderWebcamPreview();
+            predictWebcam();
+        }
+
+        function renderWebcamPreview() {
+            const canvas = document.getElementById('webcam-canvas');
+            const ctx = canvas.getContext('2d');
+            function draw() {
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                requestAnimationFrame(draw);
+            }
+            draw();
+        }
+
+        async function predictWebcam() {
+            if (videoElement.readyState >= 2) {
+                const result = handLandmarker.detectForVideo(videoElement, performance.now());
+                if (result.landmarks && result.landmarks.length > 0) {
+                    const lm = result.landmarks[0];
+                    const pinch = Math.hypot(lm[8].x - lm[4].x, lm[8].y - lm[4].y);
+                    const open = Math.hypot(lm[8].x - lm[0].x, lm[8].y - lm[0].y);
+
+                    if (pinch < 0.06) {
+                        if (STATE.mode !== 'FOCUS') {
+                            STATE.mode = 'FOCUS';
+                            STATE.focusTarget = particles[Math.floor(Math.random() * particles.length)].mesh;
+                        }
+                    } else if (open > 0.35) {
+                        STATE.mode = 'SCATTER';
+                        STATE.focusTarget = null;
+                    } else {
+                        STATE.mode = 'TREE';
+                        STATE.focusTarget = null;
+                    }
+                }
+            }
+            requestAnimationFrame(predictWebcam);
+        }
+
+        function setupEvents() {
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                composer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            document.getElementById('file-input').addEventListener('change', (e) => {
+                Array.from(e.target.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => addPhotoMesh(ev.target.result);
+                    reader.readAsDataURL(file);
+                });
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
