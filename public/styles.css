@@ -967,19 +967,16 @@ body.is-booting .signature-canvas {
   padding: 92px 24px 24px;
   opacity: 0;
   transform: translateY(20px);
-  filter: blur(10px);
   pointer-events: none;
   transition:
     opacity 360ms ease,
-    transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    filter 420ms ease;
+    transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
   contain: layout paint;
 }
 
 .module-view.is-active {
   opacity: 1;
   transform: translateY(0);
-  filter: blur(0);
   pointer-events: auto;
 }
 
@@ -2493,5 +2490,411 @@ body[data-theme="dark"] {
   .guestbook-list {
     min-height: 280px;
     max-height: none;
+  }
+}
+
+/* React Bits inspired polish: Aurora wash, Spotlight Cards, animated content and magnetic controls. */
+:root,
+body[data-theme="light"],
+body[data-theme="dark"] {
+  --premium-cyan: rgba(125, 211, 252, 0.22);
+  --premium-teal: rgba(45, 212, 191, 0.2);
+  --premium-violet: rgba(165, 180, 252, 0.18);
+  --premium-amber: rgba(251, 191, 36, 0.12);
+  --premium-ink: rgba(15, 23, 42, 0.72);
+}
+
+.mountain-bg::before {
+  content: "";
+  position: absolute;
+  inset: -34% -22% -18%;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 16% 18%, var(--premium-cyan), transparent 34%),
+    radial-gradient(ellipse at 76% 8%, var(--premium-violet), transparent 38%),
+    radial-gradient(ellipse at 52% 82%, var(--premium-teal), transparent 42%),
+    conic-gradient(from 210deg at calc(var(--mx, 0.5) * 100%) calc(var(--my, 0.5) * 100%), transparent 0deg, rgba(255, 255, 255, 0.16) 56deg, transparent 116deg, rgba(125, 211, 252, 0.12) 168deg, transparent 252deg);
+  filter: blur(42px) saturate(1.25);
+  opacity: 0.66;
+  mix-blend-mode: screen;
+  transform:
+    translate3d(
+      calc((var(--mx, 0.5) - 0.5) * -26px),
+      calc((var(--my, 0.5) - 0.5) * -18px),
+      0
+    )
+    scale(1.05);
+  animation: premiumAurora 18s ease-in-out infinite alternate;
+}
+
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at calc(var(--mx, 0.5) * 100%) calc(var(--my, 0.5) * 100%), rgba(255, 255, 255, 0.24), transparent 24%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.08), transparent 40%, rgba(255, 255, 255, 0.06));
+  opacity: 0.72;
+}
+
+.identity-stage,
+.profile-console,
+.module-shell,
+.module-detail,
+.module-card,
+.project-card,
+.feature-card,
+.skill-group,
+.timeline-item,
+.honor-item,
+.contact-card,
+.module-section,
+.fact,
+.module-stat {
+  transform-style: preserve-3d;
+}
+
+.identity-stage::before,
+.profile-console::before,
+.module-shell::before,
+.module-detail::before {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.085) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    radial-gradient(circle at calc(var(--mx, 0.5) * 100%) calc(var(--my, 0.5) * 100%), rgba(255, 255, 255, 0.14), transparent 30%);
+  background-size: 44px 44px, 44px 44px, 100% 100%;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.46), transparent 76%);
+}
+
+.module-card,
+.project-card,
+.feature-card,
+.skill-group,
+.timeline-item,
+.honor-item,
+.contact-card,
+.module-section,
+.fact,
+.module-stat,
+.detail-link,
+.primary-action,
+.secondary-action,
+.back-button,
+.cover-return,
+.icon-button,
+.brand-button,
+.send-button,
+.guestbook-submit {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.module-card::after,
+.project-card::after,
+.feature-card::after,
+.skill-group::after,
+.timeline-item::after,
+.honor-item::after,
+.contact-card::after,
+.module-section::after,
+.fact::after,
+.module-stat::after,
+.detail-link::after,
+.primary-action::after,
+.secondary-action::after,
+.back-button::after,
+.cover-return::after,
+.icon-button::after,
+.brand-button::after,
+.send-button::after,
+.guestbook-submit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(420px circle at var(--spotlight-x, 50%) var(--spotlight-y, 50%), rgba(255, 255, 255, 0.34), transparent 42%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent 38%, rgba(255, 255, 255, 0.08));
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+
+.module-card:hover::after,
+.project-card:hover::after,
+.feature-card:hover::after,
+.skill-group:hover::after,
+.timeline-item:hover::after,
+.honor-item:hover::after,
+.contact-card:hover::after,
+.module-section:hover::after,
+.fact:hover::after,
+.module-stat:hover::after,
+.detail-link:hover::after,
+.primary-action:hover::after,
+.secondary-action:hover::after,
+.back-button:hover::after,
+.cover-return:hover::after,
+.icon-button:hover::after,
+.brand-button:hover::after,
+.send-button:hover::after,
+.guestbook-submit:hover::after {
+  opacity: 1;
+}
+
+.module-card {
+  opacity: 0;
+  transform: translateY(18px) scale(0.985);
+  animation: premiumCardIn 620ms cubic-bezier(0.2, 0.85, 0.2, 1) forwards;
+  animation-delay: var(--stagger, 0ms);
+}
+
+body.is-premium-ready .identity-stage,
+body.is-premium-ready .profile-console {
+  animation: premiumPanelIn 740ms cubic-bezier(0.2, 0.85, 0.2, 1) both;
+  will-change: opacity, transform;
+}
+
+body.is-premium-ready .profile-console {
+  animation-delay: 90ms;
+}
+
+.identity-stage h1 .name-primary,
+.identity-stage .headline,
+.module-title,
+.module-summary {
+  background-image: linear-gradient(112deg, var(--color-heading) 0%, rgba(55, 65, 81, 0.88) 44%, var(--color-heading) 78%);
+  background-size: 180% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: premiumTextSheen 7s ease-in-out infinite;
+}
+
+.primary-action,
+.secondary-action,
+.back-button,
+.cover-return,
+.icon-button,
+.brand-button,
+.send-button,
+.guestbook-submit,
+.detail-link {
+  transform: translate3d(var(--magnet-x, 0), var(--magnet-y, 0), 0);
+}
+
+.primary-action::before,
+.secondary-action::before,
+.detail-link::before {
+  content: "";
+  position: absolute;
+  inset: 1px auto 1px -42%;
+  z-index: 0;
+  width: 34%;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+
+.primary-action:hover::before,
+.secondary-action:hover::before,
+.detail-link:hover::before {
+  opacity: 1;
+  animation: premiumButtonSheen 980ms ease;
+}
+
+.primary-action > *,
+.secondary-action > *,
+.detail-link > * {
+  position: relative;
+  z-index: 1;
+}
+
+.module-progress span.is-active {
+  box-shadow:
+    0 0 18px rgba(255, 255, 255, 0.42),
+    0 0 32px rgba(125, 211, 252, 0.22);
+}
+
+.stage-node.is-active,
+.stage-node:hover {
+  box-shadow:
+    0 18px 38px rgba(15, 23, 42, 0.16),
+    0 0 34px color-mix(in srgb, var(--node-color, #7dd3fc), transparent 46%),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+@keyframes premiumAurora {
+  0% {
+    transform:
+      translate3d(
+        calc((var(--mx, 0.5) - 0.5) * -26px),
+        calc((var(--my, 0.5) - 0.5) * -18px),
+        0
+      )
+      rotate(-1deg)
+      scale(1.05);
+  }
+
+  100% {
+    transform:
+      translate3d(
+        calc((var(--mx, 0.5) - 0.5) * -18px),
+        calc((var(--my, 0.5) - 0.5) * -28px),
+        0
+      )
+      rotate(1.5deg)
+      scale(1.1);
+  }
+}
+
+@keyframes premiumCardIn {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes premiumPanelIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes premiumTextSheen {
+  0%,
+  55%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  78% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes premiumButtonSheen {
+  from {
+    transform: translateX(0) skewX(-18deg);
+  }
+
+  to {
+    transform: translateX(430%) skewX(-18deg);
+  }
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .mountain-bg::before {
+    filter: blur(28px) saturate(1.08);
+    opacity: 0.34;
+    animation: none;
+  }
+
+  .module-card {
+    animation-duration: 360ms;
+    animation-delay: min(var(--stagger, 0ms), 180ms);
+  }
+
+  .module-card::after,
+  .project-card::after,
+  .feature-card::after,
+  .skill-group::after,
+  .timeline-item::after,
+  .honor-item::after,
+  .contact-card::after,
+  .module-section::after,
+  .fact::after,
+  .module-stat::after,
+  .detail-link::after,
+  .primary-action::after,
+  .secondary-action::after,
+  .back-button::after,
+  .cover-return::after,
+  .icon-button::after,
+  .brand-button::after,
+  .send-button::after,
+  .guestbook-submit::after {
+    display: none;
+  }
+
+  .identity-stage,
+  .profile-console,
+  .module-shell,
+  .module-detail,
+  .module-nav,
+  .module-card,
+  .project-card,
+  .feature-card,
+  .skill-group,
+  .timeline-item,
+  .honor-item,
+  .contact-card,
+  .module-section,
+  .fact,
+  .module-stat {
+    background:
+      linear-gradient(150deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.22)),
+      rgba(245, 248, 250, 0.28);
+  }
+
+  .identity-stage {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(8, 13, 18, 0.24) 58%, rgba(8, 13, 18, 0.48)),
+      rgba(255, 255, 255, 0.16);
+  }
+
+  .identity-stage::after {
+    background:
+      linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.08) 38%, rgba(4, 8, 12, 0.42) 100%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.2), transparent 34%, rgba(255, 255, 255, 0.08));
+  }
+
+  .identity-stage h1,
+  .identity-stage .headline {
+    color: rgba(248, 250, 252, 0.98);
+    text-shadow:
+      0 2px 10px rgba(3, 7, 18, 0.68),
+      0 0 1px rgba(3, 7, 18, 0.9);
+  }
+
+  .stage-visual {
+    opacity: 0.28;
+  }
+
+  .stage-readout {
+    background: rgba(255, 255, 255, 0.32);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mountain-bg::before,
+  .module-card,
+  body.is-premium-ready .identity-stage,
+  body.is-premium-ready .profile-console,
+  .identity-stage h1 .name-primary,
+  .identity-stage .headline,
+  .module-title,
+  .module-summary {
+    animation: none !important;
+  }
+
+  .module-card,
+  body.is-premium-ready .identity-stage,
+  body.is-premium-ready .profile-console {
+    opacity: 1;
+    transform: none;
+    filter: none;
   }
 }

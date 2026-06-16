@@ -82,6 +82,7 @@ async function init() {
     state.modules = normalizeModules(state.profile);
     renderProfile(state.profile);
     renderModules();
+    setupPremiumInteractions();
     setupStageMap();
     trackVisit();
     openInitialModuleFromRoute();
@@ -148,6 +149,73 @@ function bindGlobalEvents() {
   window.addEventListener("scroll", markScrolling, { passive: true });
   elements.moduleDetail.addEventListener("scroll", markScrolling, { passive: true });
   elements.messages.addEventListener("scroll", markScrolling, { passive: true });
+}
+
+function setupPremiumInteractions() {
+  if (state.reduceMotion) return;
+
+  const surfaceSelector = [
+    ".module-card",
+    ".project-card",
+    ".feature-card",
+    ".skill-group",
+    ".timeline-item",
+    ".honor-item",
+    ".contact-card",
+    ".module-section",
+    ".fact",
+    ".module-stat",
+    ".detail-link",
+    ".primary-action",
+    ".secondary-action",
+    ".back-button",
+    ".cover-return",
+    ".icon-button",
+    ".brand-button",
+    ".send-button",
+    ".guestbook-submit"
+  ].join(",");
+
+  const magneticSelector = [
+    ".primary-action",
+    ".secondary-action",
+    ".back-button",
+    ".cover-return",
+    ".icon-button",
+    ".brand-button",
+    ".send-button",
+    ".guestbook-submit",
+    ".detail-link"
+  ].join(",");
+
+  document.addEventListener("pointermove", (event) => {
+    if (isMobileView() && event.pointerType === "touch") return;
+
+    const surface = event.target.closest(surfaceSelector);
+    if (!surface) return;
+
+    const rect = surface.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    surface.style.setProperty("--spotlight-x", `${x}px`);
+    surface.style.setProperty("--spotlight-y", `${y}px`);
+
+    if (surface.matches(magneticSelector)) {
+      const pullX = ((x / rect.width) - 0.5) * 8;
+      const pullY = ((y / rect.height) - 0.5) * 6;
+      surface.style.setProperty("--magnet-x", `${pullX.toFixed(2)}px`);
+      surface.style.setProperty("--magnet-y", `${pullY.toFixed(2)}px`);
+    }
+  }, { passive: true });
+
+  document.addEventListener("pointerout", (event) => {
+    const surface = event.target.closest && event.target.closest(magneticSelector);
+    if (!surface || surface.contains(event.relatedTarget)) return;
+    surface.style.removeProperty("--magnet-x");
+    surface.style.removeProperty("--magnet-y");
+  }, true);
 }
 
 function bindChatEvents() {
@@ -227,6 +295,10 @@ function renderProfile(profile) {
     anchor.rel = anchor.target ? "noreferrer" : "";
     return anchor;
   }));
+
+  requestAnimationFrame(() => {
+    elements.body.classList.add("is-premium-ready");
+  });
 
   elements.quickQuestions.replaceChildren(...(profile.quickQuestions || []).map((question) => {
     const button = document.createElement("button");
@@ -330,6 +402,7 @@ function renderModules() {
     card.className = "module-card";
     card.type = "button";
     card.dataset.openModule = module.id;
+    card.style.setProperty("--stagger", `${index * 58}ms`);
     card.style.setProperty("--accent", getModuleAccent(module, index));
 
     const top = document.createElement("div");
