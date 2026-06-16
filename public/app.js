@@ -173,7 +173,12 @@ function setupPremiumInteractions() {
     ".icon-button",
     ".brand-button",
     ".send-button",
-    ".guestbook-submit"
+    ".guestbook-submit",
+    ".module-nav button",
+    ".quick-questions button",
+    ".guestbook-admin button",
+    ".guestbook-delete",
+    ".stage-node"
   ].join(",");
 
   const magneticSelector = [
@@ -185,7 +190,12 @@ function setupPremiumInteractions() {
     ".brand-button",
     ".send-button",
     ".guestbook-submit",
-    ".detail-link"
+    ".detail-link",
+    ".module-nav button",
+    ".quick-questions button",
+    ".guestbook-admin button",
+    ".guestbook-delete",
+    ".stage-node"
   ].join(",");
 
   document.addEventListener("pointermove", (event) => {

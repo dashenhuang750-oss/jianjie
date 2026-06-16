@@ -3000,6 +3000,137 @@ body::before {
     inset 0 1px 0 rgba(255, 255, 255, 0.24);
 }
 
+.brand-button,
+.cover-return,
+.status-pill,
+.icon-button,
+.primary-action,
+.secondary-action,
+.back-button,
+.module-nav button,
+.quick-questions button,
+.guestbook-submit,
+.guestbook-admin button,
+.guestbook-delete,
+.send-button,
+.detail-link,
+.stage-node {
+  overflow: hidden;
+  white-space: nowrap;
+  box-shadow:
+    0 14px 34px rgba(3, 7, 18, 0.14),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.13);
+}
+
+.primary-action span,
+.secondary-action,
+.back-button span,
+.cover-return,
+.status-pill,
+.module-nav button,
+.quick-questions button,
+.guestbook-submit,
+.guestbook-admin button,
+.guestbook-delete,
+.send-button,
+.detail-link {
+  white-space: nowrap;
+}
+
+.brand-button::before,
+.cover-return::before,
+.status-pill::before,
+.icon-button::before,
+.primary-action::before,
+.secondary-action::before,
+.back-button::before,
+.module-nav button::before,
+.quick-questions button::before,
+.guestbook-submit::before,
+.guestbook-admin button::before,
+.guestbook-delete::before,
+.send-button::before,
+.detail-link::before,
+.stage-node::before {
+  content: "";
+  position: absolute;
+  inset: 1px auto 1px -46%;
+  z-index: 0;
+  width: 38%;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: skewX(-18deg);
+  opacity: 0;
+}
+
+.brand-button:hover::before,
+.cover-return:hover::before,
+.status-pill:hover::before,
+.icon-button:hover::before,
+.primary-action:hover::before,
+.secondary-action:hover::before,
+.back-button:hover::before,
+.module-nav button:hover::before,
+.quick-questions button:hover::before,
+.guestbook-submit:hover::before,
+.guestbook-admin button:hover::before,
+.guestbook-delete:hover::before,
+.send-button:hover::before,
+.detail-link:hover::before,
+.stage-node:hover::before {
+  opacity: 1;
+  animation: premiumButtonSheen 980ms ease;
+}
+
+.brand-button > *,
+.cover-return > *,
+.status-pill > *,
+.icon-button > *,
+.primary-action > *,
+.secondary-action > *,
+.back-button > *,
+.module-nav button > *,
+.quick-questions button > *,
+.guestbook-submit > *,
+.guestbook-admin button > *,
+.guestbook-delete > *,
+.send-button > *,
+.detail-link > *,
+.stage-node > * {
+  position: relative;
+  z-index: 1;
+}
+
+.brand-button:hover,
+.cover-return:hover,
+.icon-button:hover,
+.back-button:hover,
+.secondary-action:hover,
+.module-nav button:hover,
+.quick-questions button:hover,
+.guestbook-submit:hover,
+.guestbook-admin button:hover,
+.guestbook-delete:hover,
+.send-button:hover,
+.detail-link:hover,
+.stage-node:hover {
+  transform: translate3d(var(--magnet-x, 0), var(--magnet-y, 0), 0) translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.54);
+  box-shadow:
+    0 20px 44px rgba(3, 7, 18, 0.2),
+    0 0 34px rgba(125, 211, 252, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.primary-action:hover,
+.send-button:hover {
+  transform: translate3d(var(--magnet-x, 0), var(--magnet-y, 0), 0) translateY(-2px);
+}
+
 @keyframes premiumLinePulse {
   0%,
   100% {
