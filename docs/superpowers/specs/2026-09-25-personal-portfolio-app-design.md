@@ -1,59 +1,61 @@
-# Personal Website Homepage and Portfolio App Design
+# 个人站首页动效与个人应用改造设计
 
-Status: proposed for user review
+状态：待用户审阅
 
-## Goal
+## 目标
 
-Apply the recognizable Lithos motion treatment to Huang Wenhao's actual personal-site homepage, and make `/app` the working personal portfolio rather than the unrelated Lithos product landing page. Keep the personal site's identity and content, existing profile data, module routing, APIs, and interactions. Show the mountain photograph clearly and make the pointer-following highlight unmistakably visible.
+将 Lithos 页面中辨识度较高的动画效果融入黄文浩的个人站首页，并让 `/app` 恢复为可实际使用的个人主页应用，而不是无关的 Lithos 产品介绍页。保留个人站身份信息、已有资料、模块路由、接口与交互；山景照片应清晰明亮，鼠标跟随的聚光效果应明显可见。
 
-`/` remains the personal cover/entry page and gains the Lithos-inspired motion. `/app` remains the personal profile application and regains its real modules. The request is frontend-only: backend, APIs, database/persistence, profile schema, server routing, and repository directory structure remain unchanged.
+`/` 仍是个人站封面入口，并加入 Lithos 风格的动效；`/app` 仍是个人资料应用，并恢复其真实模块。本次只改前端：后端、接口、数据库与持久化、个人资料结构、服务端路由和项目目录结构均保持不变。
 
-## Verified Context
+## 已核实的现状
 
-- `server.js` serves `public/cover.html` at `/` and `public/index.html` for `/app` and `/app/*`.
-- `public/cover.html` is already Huang Wenhao's mountain-image cover. Its script tracks pointer movement and draws clouds/parallax, and its Projects/Skills/Contact links target `/app?module=...`.
-- The current `index.html` builds a React Lithos page into `public/index.html`. `src/App.tsx` contains static Lithos copy and controls that do not open profile modules.
-- `public/app.js` is an existing profile application: it loads `/api/profile`, renders profile modules, reads the `module` query parameter, and handles profile navigation, assistant chat, guestbook, analytics, and pointer-driven interactions.
-- The pre-Lithos `public/index.html` host is recoverable from Git history and contains the DOM contract expected by `public/app.js`. `public/styles.css`, the profile API, and module data are still present.
-- `public/media/mountain-hero.webp` is the local mountain background already used by the personal-site cover.
+- `server.js` 在 `/` 提供 `public/cover.html`，在 `/app` 及 `/app/*` 提供 `public/index.html`。
+- `public/cover.html` 已是黄文浩的山景封面；页面脚本跟踪鼠标位置并绘制云层/视差效果，Projects、Skills、Contact 链接会跳转到 `/app?module=...`。
+- 当前根目录的 `index.html` 会由 Vite 构建为 `public/index.html`，内容是 React 编写的 Lithos 页面。`src/App.tsx` 中是静态 Lithos 文案，页面控件没有打开个人资料模块。
+- `public/app.js` 仍保留原有个人站应用逻辑：从 `/api/profile` 读取资料、渲染个人模块、读取 `module` 查询参数，并处理个人主页导航、AI 问答、留言板、访问统计和指针交互。
+- Lithos 页面替换前使用的 `public/index.html` 可从 Git 历史恢复，其中包含 `public/app.js` 所需的 DOM 结构。`public/styles.css`、个人资料接口和模块数据仍在项目中。
+- `public/media/mountain-hero.webp` 是个人站封面已使用的本地山景图。
 
-## Chosen Approach
+## 选定方案
 
-Keep the existing personal-site architecture rather than duplicating its module and API behavior in React. On `/`, preserve the personal cover's name, university, motto, navigation, entry action, and mountain asset, adding a clear Lithos-inspired pointer spotlight and restrained entrance/zoom motion. The mountain itself remains at readable natural brightness; localized light and small text scrims provide emphasis without globally dimming the image. Keep pointer effects smooth, responsive, keyboard/touch-safe, and compatible with reduced-motion settings.
+继续沿用现有个人站架构，避免在 React 中重复实现模块和接口行为。
 
-For `/app`, restore/adapt the existing profile application's HTML host and keep `public/app.js` plus `public/styles.css` as its functional layer. The host must include the DOM IDs and form elements consumed by `public/app.js`; the existing Vite build must emit this personal-site host to `public/index.html` instead of the Lithos page. No server routing changes are needed.
+在 `/` 上保留个人封面中的姓名、学校、格言、导航、进入主页操作和山景图片，新增清晰可见的 Lithos 风格鼠标聚光，以及克制的入场/缩放动效。山景本身保持清晰亮度；通过局部光效和小范围文字衬底保证重点突出，不使用全屏重度压暗。鼠标效果应平滑、适配不同屏幕，不遮挡导航，并兼容触屏和减少动态效果偏好。
 
-## Personal Content and Interaction
+在 `/app` 上恢复或适配现有个人资料应用的 HTML 宿主，继续使用 `public/app.js` 和 `public/styles.css` 提供功能。宿主必须保留 `public/app.js` 依赖的 DOM ID 和表单元素；Vite 构建后应将个人站宿主写入 `public/index.html`，不能再次用 Lithos 页面覆盖。无需修改服务端路由。
 
-- Render the name, role, headline, summary, availability, modules, and contact data from `/api/profile`; do not hard-code Lithos copy or duplicate profile data in the page.
-- Use real personal-site navigation: Projects, Skills, Experience, Contact, and the existing About, AI Assistant, and Guestbook modules where appropriate. Links/buttons should call the existing module-opening behavior and preserve deep links such as `/app?module=projects`.
-- The cover's Enter action opens `/app`; its Projects/Skills/Contact links open the corresponding modules. The portfolio hero actions open Projects and Contact. Module cards, back/close behavior, assistant chat, guestbook, and theme controls remain usable through their existing handlers and APIs.
-- Preserve existing analytics and all backend/API/storage contracts.
+## 个人内容与交互
 
-## Approaches Considered
+- 姓名、身份、标题、简介、开放状态、模块及联系方式均从 `/api/profile` 读取；不保留 Lithos 产品文案，也不在页面中复制一份个人资料。
+- 使用真实的个人站导航：Projects、Skills、Experience、Contact；Experience 对应现有的经历时间线/实践模块。根据现有模块提供 About、AI Assistant 和 Guestbook。所有链接和按钮调用现有模块打开逻辑，并保留 `/app?module=projects` 等深链。
+- 封面页的 Enter 进入 `/app`；Projects、Skills、Contact 链接打开对应模块。个人主页中的主操作打开 Projects，联系操作打开 Contact。模块卡片、返回/关闭、AI 问答、留言板和主题切换继续使用现有处理逻辑与接口。
+- 保留现有访问统计以及所有后端、接口和存储契约。
 
-1. **Add the motion treatment to the personal cover and reconnect the existing profile application (selected).** Lowest duplication and lowest backend risk; preserves the real homepage identity, restores the intended profile data and behavior, and reuses the existing visual and functional layers.
-2. **Port all profile modules into the current React screen.** Could produce a unified component model, but would reimplement or bridge substantial existing app logic and increase regression risk for chat, guestbook, route handling, and profile rendering.
-3. **Keep Lithos and add a second personal-app route.** Preserves both screens but leaves `/app` ambiguous and conflicts with the requirement that this site be a personal website.
+## 方案比较
 
-## Scope and Non-Goals
+1. **给个人站封面增加动效，并重新接通现有个人资料应用（选定）。** 重复实现最少、后端风险最低；既保留个人主页身份，也能恢复已有资料和功能。
+2. **在当前 React 页面中重写所有个人站模块。** 组件可以更统一，但会重复或桥接大量现有逻辑，增加问答、留言、路由和资料渲染的回归风险。
+3. **保留 Lithos，再另建个人站入口。** 虽能留下两个页面，但会让 `/app` 定位继续混乱，也不符合“这是个人站”的要求。
 
-- In scope: `/` cover motion/highlight and front-end entry links; `/app` HTML host and styling, its build output contract, real profile navigation/actions, and personal modules.
-- Out of scope: backend/server/API/database/storage changes, new dependencies, profile-content invention, and unrelated refactors.
-- Existing user edits to profile/configuration and cover files must be preserved.
+## 范围与非目标
 
-## Acceptance Criteria
+- 范围：`/` 封面动效/高亮及前端入口链接；`/app` HTML 宿主、样式、构建输出约定、个人资料导航与模块功能。
+- 不包括：后端、服务端、接口、数据库或存储改动；新增依赖；虚构个人经历；无关重构。
+- 必须保留工作区中已有的用户改动，尤其是个人资料、配置和封面文件。
 
-1. `/` remains Huang Wenhao's personal cover, not Lithos branding, and its mountain photo is clear at rest.
-2. The Lithos-inspired pointer highlight is obvious, follows the pointer, and does not block cover navigation; motion respects touch and reduced-motion settings.
-3. Cover actions and Projects/Skills/Contact deep links lead to the corresponding personal-site modules under `/app`.
-4. `/app` shows profile content from the existing API and contains no Lithos product copy; assistant, guestbook, analytics, and API-backed behavior remain wired to their current endpoints.
-5. The source/build arrangement continues to serve the personal host at `/app` from `public/index.html` after `npm run check`.
-6. `npm run check` and targeted tests pass; local Node-server checks verify `/`, `/app`, the mountain asset, and representative module routes.
+## 验收标准
 
-## Verification Plan
+1. `/` 仍显示黄文浩个人封面，不出现 Lithos 品牌文案，山景在静止时清晰可见。
+2. Lithos 风格的鼠标聚光效果明显并跟随指针，不遮挡封面导航；动效兼顾触屏和减少动态效果设置。
+3. 封面操作以及 Projects、Skills、Contact 深链能打开 `/app` 中对应的个人资料模块。
+4. `/app` 从现有接口展示个人资料，不包含 Lithos 产品文案；AI 问答、留言板、访问统计及其他接口功能仍连接现有端点。
+5. `npm run check` 后，`public/index.html` 仍是个人站宿主，不会被构建过程替换成 Lithos 页面。
+6. `npm run check` 和定向测试通过；本地 Node 服务验证 `/`、`/app`、山景资源和若干模块路由。
 
-- Add/update focused regression tests for cover motion/highlight, the personal host DOM contract, mountain asset, and module route hooks.
-- Run `npm run check` and the focused test suite.
-- Run the Node server locally and verify `/`, `/app`, and `/app?module=projects|skills|contact` load the expected personal pages and profile data; test interactions in desktop and mobile browser views.
-- Confirm `server.js`, backend files, API contracts, and database/persistence code have no diff.
+## 验证计划
+
+- 新增或更新定向回归测试，覆盖封面动效/高亮、个人站宿主 DOM 结构、山景资源和模块路由。
+- 运行 `npm run check` 与定向测试。
+- 本地启动 Node 服务，验证 `/`、`/app`、`/app?module=projects`、`/app?module=skills` 和 `/app?module=contact` 返回预期的个人站页面和资料；在桌面及移动端检查交互。
+- 确认 `server.js`、后端文件、接口契约和数据库/持久化代码没有差异。
