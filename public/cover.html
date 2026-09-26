@@ -4,11 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#e8ecef" />
-    <meta name="description" content="黄文浩的个人网站，展示数学建模、统计建模、数据分析、Desmos 可视化、竞赛经历与公共服务经历。" />
+    <meta name="description" content="黄文浩的个人网站，展示 LLM、机器学习、多模态文档理解与地理空间智能方向。" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="黄文浩 | 数理建模 · 统计建模 · 数据分析" />
-    <meta property="og:description" content="黄文浩的个人网站，展示数学建模、统计建模、数据分析、Desmos 可视化、竞赛经历与公共服务经历。" />
-    <title>黄文浩 | 数理建模 · 统计建模 · 数据分析</title>
+    <meta property="og:title" content="黄文浩 | LLM · 机器学习 · 地理空间智能" />
+    <meta property="og:description" content="黄文浩的个人网站，展示 LLM、机器学习、多模态文档理解与地理空间智能方向。" />
+    <title>黄文浩 | LLM · 机器学习 · 地理空间智能</title>
     <style>
       :root {
         color-scheme: light;
@@ -202,9 +202,6 @@
       .mountain-layer {
         position: absolute;
         inset: -4% -3% -8%;
-        background-image: url("/media/mountain-hero.webp");
-        background-repeat: no-repeat;
-        background-size: cover;
         background-position: center 34%;
         transform:
           translate3d(
@@ -215,6 +212,20 @@
           scale(1.045);
         transition: transform 140ms ease-out;
         will-change: transform;
+      }
+
+      .mountain-base,
+      .mountain-reveal {
+        position: absolute;
+        inset: 0;
+        background-image: url("/media/mountain-hero.webp");
+        background-repeat: no-repeat;
+        background-position: inherit;
+        background-size: cover;
+      }
+
+      .mountain-base {
+        z-index: 0;
       }
 
       .mountain-layer::before {
@@ -538,7 +549,10 @@
   <body>
     <main class="cover-frame" aria-label="黄文浩个人网站封面">
       <div class="hero-stage" aria-hidden="true">
-        <div class="mountain-layer"></div>
+        <div class="mountain-layer">
+          <div class="mountain-base" aria-hidden="true"></div>
+          <div class="mountain-reveal" aria-hidden="true"></div>
+        </div>
         <canvas id="cloudCanvas" class="cloud-canvas"></canvas>
         <span class="altitude-line"></span>
       </div>
@@ -546,18 +560,18 @@
       <header class="site-nav">
         <a class="wordmark" href="/app" data-enter>
           <span class="wordmark-mark">H</span>
-          <span>Huang Wenhao</span>
+          <span>黄文浩</span>
         </a>
 
         <nav class="nav-menu" aria-label="主导航">
-          <a href="/app?module=projects" data-enter>Projects</a>
-          <a href="/app?module=skills" data-enter>Skills</a>
-          <a href="/app?module=contact" data-enter>Contact</a>
+          <a href="/app?module=projects" data-enter>项目</a>
+          <a href="/app?module=skills" data-enter>技能</a>
+          <a href="/app?module=contact" data-enter>联系</a>
         </nav>
 
         <div class="nav-actions">
           <button class="enter-link" type="button" data-enter>
-            <span>Enter</span>
+            <span>进入主页</span>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 12h13M13 6l6 6-6 6" />
             </svg>
@@ -566,7 +580,7 @@
       </header>
 
       <section class="hero-copy" aria-labelledby="coverTitle">
-        <p class="hero-kicker">Northwest A&F University </p>
+        <p class="hero-kicker">西北农林科技大学</p>
         <h1 id="coverTitle" class="hero-title">黄文浩</h1>
         <p class="hero-line">厚德载物</p>
         <button id="enterButton" class="enter-button" type="button">
@@ -577,10 +591,10 @@
         </button>
       </section>
 
-      <div class="side-index" aria-hidden="true">Modeling Interface</div>
+      <div class="side-index" aria-hidden="true">建模界面</div>
       <div class="edge-caption" aria-hidden="true">
-        <span>Mathematical Modeling</span>
-        <small>Portfolio / Data Analysis</small>
+        <span>数学建模</span>
+        <small>个人作品集 / 数据分析</small>
       </div>
     </main>
 
@@ -595,14 +609,46 @@
         let height = 0;
         let points = [];
         let frame = 0;
+        const POINTER_EASING = 0.1;
+        const mountainLayer = document.querySelector(".mountain-layer");
+        const pointer = {
+          currentX: window.innerWidth / 2,
+          currentY: window.innerHeight / 2,
+          targetX: window.innerWidth / 2,
+          targetY: window.innerHeight / 2
+        };
 
         const setPointer = (x, y) => {
-          const mx = Math.min(Math.max(x / Math.max(window.innerWidth, 1), 0), 1);
-          const my = Math.min(Math.max(y / Math.max(window.innerHeight, 1), 0), 1);
+          pointer.targetX = x;
+          pointer.targetY = y;
+          if (reduceMotion) {
+            pointer.currentX = x;
+            pointer.currentY = y;
+            writePointerPosition();
+          }
+        };
+
+        const writePointerPosition = () => {
+          const mx = Math.min(Math.max(pointer.currentX / Math.max(window.innerWidth, 1), 0), 1);
+          const my = Math.min(Math.max(pointer.currentY / Math.max(window.innerHeight, 1), 0), 1);
+          const rect = mountainLayer.getBoundingClientRect();
+          const scaleX = rect.width / Math.max(mountainLayer.offsetWidth, 1);
+          const scaleY = rect.height / Math.max(mountainLayer.offsetHeight, 1);
+          const localX = Math.min(Math.max((pointer.currentX - rect.left) / scaleX, 0), mountainLayer.offsetWidth);
+          const localY = Math.min(Math.max((pointer.currentY - rect.top) / scaleY, 0), mountainLayer.offsetHeight);
+
           root.style.setProperty("--mx", mx.toFixed(3));
           root.style.setProperty("--my", my.toFixed(3));
-          root.style.setProperty("--px", `${x.toFixed(1)}px`);
-          root.style.setProperty("--py", `${y.toFixed(1)}px`);
+          root.style.setProperty("--px", `${localX.toFixed(1)}px`);
+          root.style.setProperty("--py", `${localY.toFixed(1)}px`);
+        };
+
+        const easePointerPosition = () => {
+          if (!reduceMotion) {
+            pointer.currentX += (pointer.targetX - pointer.currentX) * POINTER_EASING;
+            pointer.currentY += (pointer.targetY - pointer.currentY) * POINTER_EASING;
+          }
+          writePointerPosition();
         };
 
         const trackVisit = async () => {
@@ -653,6 +699,7 @@
 
         const draw = () => {
           frame += 1;
+          easePointerPosition();
           ctx.clearRect(0, 0, width, height);
 
           const time = frame * 0.006;

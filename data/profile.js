@@ -1,14 +1,14 @@
 module.exports = {
-  siteTitle: "黄文浩 | 数理建模 · 统计建模 · 数据分析",
-  siteDescription: "黄文浩的个人网站，展示数学建模、统计建模、数据分析、Desmos 可视化、竞赛经历与公共服务经历。",
+  siteTitle: "黄文浩 | LLM · 机器学习 · 地理空间智能",
+  siteDescription: "黄文浩的个人网站，展示 LLM、机器学习、多模态文档理解与地理空间智能方向。",
   name: "黄文浩",
   latinName: "",
-  role: " ",
+  role: "LLM / 机器学习 / 地理空间智能",
   location: "西北农林科技大学 · 本科在读",
-  availability: "开放建模竞赛、数据分析与学习交流",
+  availability: "开放 LLM、机器学习与地理空间智能交流",
   headline: "——观万物而不为，明心境而少言",
-  summary: "西北农林科技大学本科在读，关注数学建模、统计建模、物理建模、数据分析与可解释表达。长期保持对数学与物理问题的兴趣，也在竞赛、可视化探索和公共服务中持续训练问题拆解、团队协同与结果交付能力。",
-  greeting: "你好，我是黄文浩的 AI 分身。你可以问我关于教育背景、建模经历、竞赛荣誉、能力优势、合作交流或最近在做什么的问题。",
+  summary: "西北农林科技大学本科在读，聚焦大语言模型、机器学习与地理空间智能方向。具备多模态训练数据构建、OCR 文档理解、数据质量校验与训练准备经验；以扎实的数理基础为底座，持续探索语言、视觉与空间信息的联合建模。",
+  greeting: "你好，我是黄文浩的 AI 分身。你可以问我关于机器学习方向、DocLayLLM 项目、教育背景、技能能力或合作交流的问题。",
   guestbook: {
     enabled: true,
     adminPassword: ""
@@ -30,93 +30,93 @@ module.exports = {
   ],
   facts: [
     {
-      label: "竞赛",
-      value: "第 41 届奥林匹克物理竞赛云南赛区三等奖"
-    },
-    {
-      label: "学业",
-      value: "专业前 10.6%，专业二等奖学金，高数卷面满分"
+      label: "方向",
+      value: "LLM、机器学习、地理空间智能与多模态文档理解"
     },
     {
       label: "项目",
-      value: "MCM/ICM 美赛与统计建模项目队长"
+      value: "DocLayLLM 多模态文档理解训练数据工程"
     },
     {
-      label: "特色",
-      value: "Desmos / ODE 自驱数理建模探索"
+      label: "能力",
+      value: "训练数据构建、OCR 空间对齐与质量校验"
+    },
+    {
+      label: "探索",
+      value: "GIS、遥感智能分析与地理大模型"
     }
   ],
   modules: [
     {
       id: "about",
-      eyebrow: "About",
+      eyebrow: "Profile",
       title: "关于我",
-      summary: "以数学、物理和建模为长期兴趣，把抽象问题转化为清晰结构。",
+      summary: "以数理基础进入机器学习、多模态理解与地理空间智能方向。",
       accent: "#173c34",
-      chips: ["自驱学习", "建模化思维", "清晰表达"],
+      chips: ["机器学习", "多模态", "地理空间智能"],
       stats: [
         { label: "当前状态", value: "本科在读" },
         { label: "专业/学院", value: "资源环境学院 · 地理信息科学专业" },
-        { label: "核心方向", value: "数理建模" }
+        { label: "核心方向", value: "LLM / 机器学习" }
       ],
       sections: [
         {
           heading: "我关注什么",
-          body: "我关注数学建模、统计建模与数据分析，习惯从问题结构出发，完成从假设构建、变量筛选、模型解释到结果表达的完整闭环。相比单纯追求结果，我更在意推理过程是否清楚、结论是否可解释、表达是否能被他人理解。"
+          body: "我聚焦大语言模型、机器学习与地理空间智能，关注训练数据、模型输入与验证流程之间的关系；希望将语言、视觉与空间信息转化为可学习、可验证的模型能力。"
         },
         {
           heading: "我如何学习",
-          body: "从高中阶段的数学物理学习，到大学阶段的建模竞赛与统计训练，我逐渐形成了以问题拆解为核心的学习方式：先看结构，再看变量、假设和可以验证的结果。"
+          body: "从数理训练和建模竞赛出发，我逐步进入多模态训练数据、OCR 文档理解和空间智能领域；先厘清数据与任务边界，再组织可复现的处理与验证流程。"
         },
         {
-          heading: "个人经历的底色",
-          body: "我从小参与过航模、扎染、建筑、车模、乐器等活动，这些经历扩展了视野，也让我较早形成了对结构、动手实践和问题拆解的兴趣。进入大学后，我继续把这种兴趣延伸到数学建模、统计建模、数据分析和个人作品集建设中。"
+          heading: "长期方向",
+          body: "地理空间智能与地理大模型是我的长期探索方向。我正在学习 GIS、地理空间数据处理与遥感智能分析，关注空间推理和地理信息理解的机器学习应用。"
         }
       ]
     },
     {
       id: "highlights",
       eyebrow: "Highlights",
-      title: "关键亮点",
-      summary: "用可验证的事实呈现学业基础、竞赛经历与自驱探索。",
+      title: "技术方向",
+      summary: "以多模态训练数据、机器学习与空间智能为主线持续积累。",
       accent: "#9a6a1f",
-      chips: ["数理基础", "竞赛推进", "持续成长"],
+      chips: ["LLM", "机器学习", "GIS"],
       cards: [
         {
-          label: "Physics",
-          title: "物理竞赛省级三等奖",
-          description: "第 41 届奥林匹克物理竞赛三等奖，云南赛区。",
-          tags: ["物理基础", "竞赛"]
+          label: "LLM",
+          title: "大语言模型",
+          description: "持续学习 LLM、监督微调数据组织与模型训练流程。",
+          tags: ["SFT", "Training Data"]
         },
         {
-          label: "Ranking",
-          title: "专业前 10.6%",
-          description: "大学阶段保持稳定学习投入，曾获专业二等奖学金。",
-          tags: ["学业", "奖学金"]
+          label: "Multimodal",
+          title: "多模态文档理解",
+          description: "围绕图像、OCR 文本与版面坐标开展训练数据构建实践。",
+          tags: ["OCR", "Document AI"]
         },
         {
-          label: "Math",
-          title: "高数卷面满分",
-          description: "持续强化数学基础，重视严谨推导与基础能力。",
-          tags: ["高等数学", "基础能力"]
+          label: "Data",
+          title: "训练数据工程",
+          description: "关注多源标注转换、样本组织、数据质量与训练前验证。",
+          tags: ["JSONL", "Data Quality"]
         },
         {
-          label: "Leader",
-          title: "建模项目队长",
-          description: "在美赛与统计建模项目中承担队长角色，推进从问题拆解到论文交付。",
-          tags: ["MCM/ICM", "统计建模"]
+          label: "GeoAI",
+          title: "地理空间智能",
+          description: "持续学习 GIS、遥感智能分析与空间推理方法。",
+          tags: ["GIS", "Remote Sensing"]
         },
         {
-          label: "School",
-          title: "高中数学多次年级第一",
-          description: "高中阶段数学、物理长期保持年级前列，并多次进行讲题分享。",
-          tags: ["数学", "公开表达"]
+          label: "Foundation",
+          title: "数理建模基础",
+          description: "数理训练与建模竞赛经验支撑机器学习中的结构化问题拆解。",
+          tags: ["Modeling", "Reasoning"]
         },
         {
-          label: "Explore",
-          title: "Desmos / ODE 自主探索",
-          description: "独立推导圆锥曲线切线参数方程，并尝试用常微分方程延展物理错题。",
-          tags: ["可视化", "自驱探索"]
+          label: "Learning",
+          title: "持续探索",
+          description: "围绕语言、视觉与空间信息的联合建模持续积累。",
+          tags: ["Vision", "Spatial Intelligence"]
         }
       ]
     },
@@ -124,58 +124,42 @@ module.exports = {
       id: "projects",
       eyebrow: "Projects",
       title: "项目与作品",
-      summary: "从建模竞赛到个人可视化探索，重点呈现问题拆解、模型解释与交付能力。",
+      summary: "以 DocLayLLM 多模态训练数据工程为实践起点，向 LLM 与地理空间智能延伸。",
       accent: "#243c5a",
-      chips: ["队长", "建模", "论文", "协作", "交付"],
+      chips: ["LLM", "SFT", "OCR", "Multimodal", "GeoAI"],
       projects: [
         {
-          title: "美国大学生数学建模竞赛 MCM/ICM",
-          role: "队长 / 建模 / 论文协作",
-          description: "带队完成选题理解、假设设定、模型设计、结果解释与论文分工，推动团队从开放问题走向完整成稿。",
+          title: "DocLayLLM 多模态文档理解训练数据工程",
+          role: "数据工程 / 训练准备 / 多模态 SFT",
+          description: "面向图像、OCR 文本与版面空间坐标的联合建模，构建 DocLayLLM 的 OCR-grounded SFT 数据集，完成多源文档标注的规范化转换、训练样本构建与数据校验。",
           contributions: [
-            "梳理模型思路，搭建变量与指标框架。",
-            "组织图表表达和结果解释，优化论文叙事逻辑。",
-            "协调分工与交付节奏，保证团队持续推进。"
+            "围绕 image、ocr、instruction、response 组织规范化训练样本。",
+            "处理 OCR 文本与版面空间坐标，完成多模态训练数据对齐。",
+            "构建 JSONL 数据集并完成训练前数据质量校验。"
           ],
-          tags: ["MCM/ICM", "Modeling", "Paper", "Leadership"],
-          linkLabel: "链接待补充"
+          tags: ["DocLayLLM", "SFT", "OCR", "JSONL", "Multimodal"]
         },
         {
-          title: "统计建模竞赛 / 训练项目",
-          role: "队长 / 数据流程 / 模型解释",
-          description: "围绕数据清洗、特征与指标构造、模型拟合、检验解释、论文成稿的完整流程组织推进。",
+          title: "地理空间智能与地理大模型探索",
+          role: "学习与研究方向",
+          description: "以地理空间数据、遥感信息与空间推理为长期探索方向，持续学习 GIS、地理数据处理与地理大模型相关方法。",
           contributions: [
-            "组织数据处理与指标构造流程，保持结论可解释。",
-            "将数学直觉、统计思维和论文呈现连接起来。",
-            "强调模型假设、检验结果与表达质量的一致性。"
+            "关注语言、视觉与空间信息的联合表示。",
+            "学习地理空间数据处理与遥感智能分析方法。",
+            "探索地理大模型在空间推理与地理信息理解中的应用。"
           ],
-          tags: ["Statistical Modeling", "Data Cleaning", "Interpretability"],
-          linkLabel: "链接待补充"
+          tags: ["GIS", "GeoAI", "Remote Sensing", "Spatial Reasoning"]
         },
         {
-          title: "Desmos 数理建模与可视化探索",
-          role: "个人项目 / 推导 / 可视化",
-          description: "独立推导圆锥曲线切线参数方程，并通过 Desmos 搭建可视化作品；同时对物理错题进行延展研究，尝试使用常微分方程得到表达式。",
+          title: "数理建模基础",
+          role: "队长 / 建模 / 协作",
+          description: "参与美国大学生数学建模竞赛 MCM/ICM 与统计建模训练并担任队长，将数理训练形成的结构化思维迁移至机器学习任务。",
           contributions: [
-            "把几何推导转化为可交互的图形表达。",
-            "围绕错题继续追问模型结构和物理含义。",
-            "进一步理解特征时间等物理概念。"
+            "推进问题拆解、变量组织与结果解释。",
+            "组织模型表达、论文协作与任务推进。",
+            "为机器学习任务积累数理建模与结构化分析基础。"
           ],
-          tags: ["Desmos", "ODE", "Conic Section", "Visualization"],
-          links: [
-            {
-              href: "https://www.desmos.com/calculator/jeloxwztcy?lang=zh-CN",
-              label: "物理 / 数学模型 1"
-            },
-            {
-              href: "https://www.desmos.com/calculator/xigzwsvcbg?lang=zh-CN",
-              label: "圆锥曲线切线"
-            },
-            {
-              href: "https://www.desmos.com/calculator/m1r2swmjut?lang=zh-CN",
-              label: "模型作品 2"
-            }
-          ]
+          tags: ["MCM/ICM", "Modeling", "Data Analysis", "Leadership"]
         }
       ],
       works: [
@@ -210,25 +194,25 @@ module.exports = {
       id: "skills",
       eyebrow: "Skills",
       title: "能力栈",
-      summary: "能力重点集中在数学建模、统计建模、数据工具和表达协作。",
+      summary: "围绕训练数据、多模态理解与空间智能持续构建技术能力。",
       accent: "#173c34",
-      chips: ["Mathematical Modeling", "Statistical Modeling", "Data & Tools", "Leadership"],
+      chips: ["Python", "LLM", "OCR", "GIS"],
       skillGroups: [
         {
-          title: "Mathematical Modeling",
-          items: ["假设构建", "变量筛选", "指标体系", "物理建模", "模型解释", "结果表达"]
+          title: "Machine Learning & Data",
+          items: ["Python", "数据清洗", "JSONL 数据集构建", "数据质量校验", "训练前验证", "可追溯数据组织"]
         },
         {
-          title: "Statistical Modeling",
-          items: ["统计建模", "数据清洗", "特征构造", "拟合检验", "可解释表达", "论文呈现"]
+          title: "LLM & Multimodal",
+          items: ["LLM", "SFT 数据构建", "OCR", "文档理解", "图像文本空间坐标", "多模态训练数据"]
         },
         {
-          title: "Data & Tools",
-          items: ["Desmos", "Python", "Claude Code", "Codex", "ChatGPT", "AI 辅助整理与表达"]
+          title: "GeoAI",
+          items: ["GIS", "地理空间数据", "遥感智能分析", "空间推理", "地理大模型", "持续学习"]
         },
         {
-          title: "Communication & Leadership",
-          items: ["讲题分享", "材料撰写", "团队协同", "任务分配", "公开表达", "志愿服务"]
+          title: "Modeling Foundation",
+          items: ["数理建模", "统计建模", "问题拆解", "结果解释", "团队协同", "公开表达"]
         }
       ]
     },
@@ -236,7 +220,7 @@ module.exports = {
       id: "timeline",
       eyebrow: "Timeline",
       title: "经历时间线",
-      summary: "从中学阶段的数理优势，到大学阶段的建模、数据与公共服务探索。",
+      summary: "以数理基础为起点，持续向 LLM、机器学习与空间智能拓展。",
       accent: "#44515a",
       chips: ["教育背景", "学生工作", "公共服务"],
       timeline: [
@@ -244,8 +228,8 @@ module.exports = {
           period: "2025.09 - 至今",
           title: "西北农林科技大学",
           meta: "本科在读 · 资源环境学院 · 地理信息科学专业",
-          body: "聚焦数理建模、统计建模与数据分析方向。大学阶段专业前 10.6%，曾获专业二等奖学金，高数卷面满分。",
-          tags: ["本科", "建模", "数据分析"]
+          body: "本科在读，聚焦大语言模型、机器学习与地理空间智能方向；以地理信息科学专业背景为基础，持续学习多模态文档理解与空间智能。",
+          tags: ["本科", "LLM", "机器学习", "GeoAI"]
         },
         {
           period: "2022.09 - 2025.06",
@@ -289,7 +273,7 @@ module.exports = {
       id: "contact",
       eyebrow: "Contact",
       title: "联系我",
-      summary: "适合围绕建模竞赛、统计建模、数据分析、AI 工具实践和学习交流展开沟通。",
+      summary: "适合围绕 LLM、机器学习、地理空间智能和学习交流展开沟通。",
       accent: "#173c34",
       contacts: [
         { label: "邮箱", value: "wenhao_h2007@163.com", href: "mailto:wenhao_h2007@163.com" },
@@ -300,7 +284,7 @@ module.exports = {
       sections: [
         {
           heading: "适合联系我的情况",
-          body: "建模竞赛组队、统计建模训练、数据分析交流、数理问题讨论、AI 工具实践、个人网站或作品表达优化。"
+          body: "LLM 与多模态学习交流、机器学习项目协作、地理空间智能讨论、数据处理实践与技术作品交流。"
         },
         {
           heading: "联系时建议带上",
@@ -320,7 +304,7 @@ module.exports = {
       id: "assistant",
       eyebrow: "Ask",
       title: "AI 分身",
-      summary: "访客可以直接提问，回答会基于公开资料、建模经历和个人表达风格生成。",
+      summary: "访客可以直接提问，回答会基于公开资料、机器学习项目与个人表达风格生成。",
       accent: "#44515a",
       chips: ["AI 问答", "公开资料", "互动介绍"]
     }
@@ -329,7 +313,7 @@ module.exports = {
     {
       topic: "个人背景",
       keywords: ["你是谁", "介绍", "背景", "个人简介", "学校", "专业"],
-      answer: "我是黄文浩，西北农林科技大学资源环境学院地理信息科学专业本科在读，关注数理建模、统计建模、物理建模、数据分析与可解释表达。"
+      answer: "我是黄文浩，西北农林科技大学资源环境学院地理信息科学专业本科在读，方向聚焦大语言模型、机器学习与地理空间智能；正在从数理建模延伸到多模态训练数据、OCR 文档理解和空间智能。"
     },
     {
       topic: "竞赛荣誉",
@@ -337,19 +321,19 @@ module.exports = {
       answer: "我曾获第 41 届奥林匹克物理竞赛三等奖（云南赛区），高中阶段数学多次年级第一，数学和物理长期保持年级前列。大学阶段专业前 10.6%，曾获专业二等奖学金，高数卷面满分。"
     },
     {
-      topic: "建模经历",
-      keywords: ["建模", "美赛", "MCM", "ICM", "统计建模", "项目", "做过什么"],
-      answer: "我参与过美国大学生数学建模竞赛 MCM/ICM 和统计建模竞赛/训练项目，并担任队长。主要推进选题理解、假设设定、变量与指标框架、模型设计、结果解释、图表表达和论文逻辑优化。"
+      topic: "机器学习项目",
+      keywords: ["机器学习", "LLM", "DocLayLLM", "OCR", "多模态", "项目", "做过什么"],
+      answer: "我完成过 DocLayLLM 多模态文档理解训练数据工程：围绕图像、OCR 文本、空间坐标和指令问答构建 OCR-grounded SFT 数据集，完成多源标注转换、JSONL 样本组织和训练前数据校验。"
     },
     {
-      topic: "自驱探索",
-      keywords: ["Desmos", "ODE", "圆锥曲线", "可视化", "物理错题", "自主探索"],
-      answer: "我做过 Desmos 数理建模与可视化探索，独立推导圆锥曲线切线参数方程，也对物理错题进行延展研究，尝试用常微分方程得到表达式，并进一步理解特征时间等概念。"
+      topic: "地理空间智能",
+      keywords: ["地理大模型", "地理空间", "GIS", "遥感", "GeoAI", "空间推理"],
+      answer: "地理空间智能与地理大模型是我正在持续投入的学习方向。我关注 GIS、地理空间数据处理、遥感智能分析和空间推理，尚未将其表述为已完成的项目经历。"
     },
     {
       topic: "技能工具",
       keywords: ["技能", "工具", "Python", "AI", "会什么"],
-      answer: "我的能力集中在数学建模、统计建模、物理建模、数据清洗、特征构造、拟合检验和结果解释。工具方面会使用 Desmos、Python，也持续使用 Claude Code、Codex、ChatGPT 等 AI 工具提升资料整理、代码生成和表达效率。"
+      answer: "我的能力集中在 Python 数据处理、机器学习训练数据构建、OCR 与多模态文档理解、数据质量校验，以及 LLM 相关学习。地理空间智能和地理大模型是我正在持续投入的学习方向。"
     },
     {
       topic: "实践经历",
@@ -359,7 +343,7 @@ module.exports = {
     {
       topic: "合作方式",
       keywords: ["合作", "联系", "邮箱", "微信", "QQ", "电话", "怎么联系"],
-      answer: "可以通过邮箱 wenhao_h2007@163.com、微信 h3435738857、QQ 3435738857 或电话 15608744434 联系我。比较适合交流建模竞赛、统计建模、数据分析、AI 工具实践和学习互助。"
+      answer: "可以通过邮箱 wenhao_h2007@163.com、微信 h3435738857、QQ 3435738857 或电话 15608744434 联系我。适合交流 LLM、机器学习、多模态文档理解、地理空间智能和学习实践。"
     }
   ],
   voice: {
@@ -383,8 +367,8 @@ module.exports = {
     ]
   },
   quickQuestions: [
-    "你最核心的能力是什么？",
-    "你做过哪些建模项目？",
+    "你的机器学习方向是什么？",
+    "你做过哪些 LLM 项目？",
     "你的竞赛和荣誉有哪些？",
     "如果想合作，应该怎么联系你？"
   ]

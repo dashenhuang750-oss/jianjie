@@ -104,20 +104,42 @@ body {
 }
 
 .mountain-layer {
-  opacity: 0.98;
-  filter: grayscale(0.12) saturate(0.82) contrast(1.08) brightness(0.9);
+  opacity: 1;
   background-position: center 42%;
 }
 
+.mountain-base {
+  background-position: inherit;
+  background-size: cover;
+  filter: grayscale(0.12) saturate(0.78) contrast(1.04) brightness(0.84);
+}
+
+.mountain-reveal {
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(
+    circle 260px at var(--px, 50%) var(--py, 50%),
+    #000 0%, #000 40%, rgba(0, 0, 0, 0.75) 60%, rgba(0, 0, 0, 0.4) 75%, rgba(0, 0, 0, 0.12) 88%, transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle 260px at var(--px, 50%) var(--py, 50%),
+    #000 0%, #000 40%, rgba(0, 0, 0, 0.75) 60%, rgba(0, 0, 0, 0.4) 75%, rgba(0, 0, 0, 0.12) 88%, transparent 100%
+  );
+}
+
 .mountain-layer::before {
+  z-index: 2;
+  pointer-events: none;
   background:
     linear-gradient(180deg, rgba(248, 250, 252, 0.34) 0%, rgba(248, 250, 252, 0.16) 31%, rgba(248, 250, 252, 0.02) 58%),
     linear-gradient(90deg, rgba(248, 250, 252, 0.16), transparent 24%, transparent 76%, rgba(248, 250, 252, 0.18));
 }
 
 .mountain-layer::after {
-  height: 46%;
-  background: linear-gradient(0deg, rgba(15, 23, 42, 0.5), rgba(15, 23, 42, 0.02));
+  inset: 0;
+  height: auto;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(15, 23, 42, 0.42), rgba(15, 23, 42, 0.015) 74%);
 }
 
 .cloud-canvas {
@@ -275,5 +297,19 @@ body {
 
   .edge-caption {
     display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .mountain-reveal {
+    -webkit-mask-image: radial-gradient(circle 260px at 50% 48%, #000 0%, #000 40%, rgba(0, 0, 0, 0.75) 60%, rgba(0, 0, 0, 0.4) 75%, rgba(0, 0, 0, 0.12) 88%, transparent 100%);
+    mask-image: radial-gradient(circle 260px at 50% 48%, #000 0%, #000 40%, rgba(0, 0, 0, 0.75) 60%, rgba(0, 0, 0, 0.4) 75%, rgba(0, 0, 0, 0.12) 88%, transparent 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mountain-reveal {
+    -webkit-mask-image: radial-gradient(circle 260px at 50% 48%, #000 0%, #000 40%, rgba(0, 0, 0, 0.75) 60%, rgba(0, 0, 0, 0.4) 75%, rgba(0, 0, 0, 0.12) 88%, transparent 100%);
+    mask-image: radial-gradient(circle 260px at 50% 48%, #000 0%, #000 40%, rgba(0, 0, 0, 0.75) 60%, rgba(0, 0, 0, 0.4) 75%, rgba(0, 0, 0, 0.12) 88%, transparent 100%);
   }
 }

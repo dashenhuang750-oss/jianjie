@@ -25,6 +25,25 @@ function isMobileView() {
 }
 
 const VISUAL_ACCENTS = ["#172027", "#5f6b73", "#9aa4aa", "#3e4a52", "#b8c0c5", "#2d363d"];
+const PROFILE_LABEL_TRANSLATIONS = Object.freeze({
+  Profile: "个人介绍",
+  Highlights: "技术方向",
+  Projects: "项目与作品",
+  Skills: "技能",
+  Timeline: "经历时间线",
+  Honors: "荣誉成果",
+  Contact: "联系方式",
+  Guestbook: "留言板",
+  Ask: "AI 助手",
+  "Machine Learning & Data": "机器学习与数据",
+  "LLM & Multimodal": "大语言模型与多模态",
+  GeoAI: "地理空间智能",
+  "Modeling Foundation": "数理建模基础"
+});
+
+function localizeProfileLabel(label) {
+  return PROFILE_LABEL_TRANSLATIONS[label] || label || "";
+}
 
 const elements = {
   body: document.body,
@@ -476,13 +495,13 @@ function setupStageMap() {
     button.append(label);
 
     button.addEventListener("mouseenter", () => {
-      elements.stageReadoutLabel.textContent = module.eyebrow || "Module";
+      elements.stageReadoutLabel.textContent = localizeProfileLabel(module.eyebrow || "个人模块");
       elements.stageReadoutTitle.textContent = module.title || module.id;
       highlightStageNode(module.id);
     });
 
     button.addEventListener("mouseleave", () => {
-      elements.stageReadoutLabel.textContent = "Profile Map";
+      elements.stageReadoutLabel.textContent = "个人模块图谱";
       elements.stageReadoutTitle.textContent = "";
       highlightStageNode(state.activeModuleId);
     });
@@ -748,7 +767,7 @@ function renderModuleDetail(module) {
 
   const kicker = document.createElement("span");
   kicker.className = "module-kicker";
-  kicker.textContent = module.eyebrow || "Module";
+  kicker.textContent = localizeProfileLabel(module.eyebrow || "个人模块");
 
   const title = document.createElement("h2");
   title.className = "module-title";
@@ -918,7 +937,7 @@ function renderSkillGroups(groups, container) {
     item.className = "skill-group";
 
     const title = document.createElement("h3");
-    title.textContent = group.title || "";
+    title.textContent = localizeProfileLabel(group.title);
 
     const list = document.createElement("ul");
     list.append(...(Array.isArray(group.items) ? group.items : []).map((skill) => {
@@ -1154,7 +1173,7 @@ function renderGuestbookModule(module) {
 
   const kicker = document.createElement("span");
   kicker.className = "module-kicker";
-  kicker.textContent = module.eyebrow || "Guestbook";
+  kicker.textContent = localizeProfileLabel(module.eyebrow || "留言板");
 
   const title = document.createElement("h2");
   title.className = "module-title";
@@ -1949,7 +1968,7 @@ function insertBeforeAssistant(modules, module) {
 function createGuestbookModule() {
   return {
     id: "guestbook",
-    eyebrow: "Guestbook",
+    eyebrow: "留言板",
     title: "留言板",
     summary: "访客可以在这里留下想法、建议或合作意向。留言会公开展示。",
     accent: "#22d3ee",

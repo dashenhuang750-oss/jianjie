@@ -9,7 +9,8 @@
     "dev": "vite",
     "dev:server": "node server.js",
     "build": "vite build",
-    "check": "node --check server.js && node scripts/validate-config.js && tsc --noEmit && vite build"
+    "test": "node --test",
+    "check": "node --check server.js && node scripts/validate-config.js && tsc --noEmit && vite build && npm test"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.4",
