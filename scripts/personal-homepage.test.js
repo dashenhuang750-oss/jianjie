@@ -46,3 +46,9 @@ test("existing personal modules and API integrations remain the implementation",
   assert.match(app, /localizeProfileLabel\(group\.title\)/);
   assert.match(app, /function renderGuestbookModule[\s\S]{0,700}kicker\.textContent = localizeProfileLabel\(module\.eyebrow/);
 });
+
+test("guestbook hides only messages whose author name is exactly lowercase h", () => {
+  assert.match(app, /const displayedMessages = state\.guestbookMessages\.filter\(\(message\) => message\.name !== "h"\)/);
+  assert.match(app, /countTarget\.textContent = `\$\{displayedMessages\.length\} 条`/);
+  assert.match(app, /const visibleMessages = displayedMessages\.slice\(0, 24\)/);
+});

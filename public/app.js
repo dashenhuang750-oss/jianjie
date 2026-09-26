@@ -1377,11 +1377,12 @@ async function submitGuestbookMessage({ name, content, form, contentInput, statu
 
 function renderGuestbookMessages(list, status, countTarget) {
   list.replaceChildren();
+  const displayedMessages = state.guestbookMessages.filter((message) => message.name !== "h");
   if (countTarget) {
-    countTarget.textContent = `${state.guestbookMessages.length} 条`;
+    countTarget.textContent = `${displayedMessages.length} 条`;
   }
 
-  if (state.guestbookMessages.length === 0) {
+  if (displayedMessages.length === 0) {
     const empty = document.createElement("p");
     empty.className = "guestbook-empty";
     empty.textContent = "还没有留言。";
@@ -1389,7 +1390,7 @@ function renderGuestbookMessages(list, status, countTarget) {
     return;
   }
 
-  const visibleMessages = state.guestbookMessages.slice(0, 24);
+  const visibleMessages = displayedMessages.slice(0, 24);
 
   list.append(...visibleMessages.map((message, index) => {
     const flow = getGuestbookFlow(index);
@@ -1421,7 +1422,7 @@ function renderGuestbookMessages(list, status, countTarget) {
     return item;
   }));
 
-  if (state.guestbookMessages.length > visibleMessages.length) {
+  if (displayedMessages.length > visibleMessages.length) {
     const hint = document.createElement("p");
     hint.className = "guestbook-flow-hint";
     hint.textContent = `已显示最新 ${visibleMessages.length} 条留言。`;
